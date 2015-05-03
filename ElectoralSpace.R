@@ -1,0 +1,388 @@
+#Install ggtern from an online CRAN repository
+install.packages("ggtern")
+#Load the ggtern library
+library(ggtern)
+#install.packages("ggplot2")
+#library(ggplot2)
+install.packages("e1071")
+library(e1071)
+
+#defining a function for the seat allocation
+alloc <- function( candidates, votes, seats, step ){ 
+  tmp <- data.frame( 
+    candidates = rep( candidates, each = seats ), 
+    scores     = as.vector(sapply( votes, function(x) x / 
+                                seq(from=1, to=1+step*(seats-1), by=step) )),
+    votesrep = rep( votes, each = seats )
+  ) 
+  tmp <- tmp$candidates[order( - tmp$scores, -tmp$votesrep )] [1:seats] 
+  table(tmp) 
+}
+
+#D'Hondt example
+votes <- sample(1:10000, 5) 
+votes 
+alloc(letters[1:5], votes, 10, 1) 
+
+seats=5;
+step=1; #(2 Sainte-Laguë 1 D'Hondt)
+dots=100000
+
+#define nodes
+t=1;
+nnodes=(seats+1)*(seats+2)/2;
+nodes= matrix(0,nnodes,3);
+for (i in 0:seats){
+  for (j in i:seats){
+    nodes[t,] = c(i,j-i,seats-j);
+    t=t+1;
+  }
+}
+
+#core code draft
+S=matrix(0,dots,3)
+R=matrix(0,dots,3)
+x=matrix(0,dots)
+y=x
+z=x
+Euclid=matrix(0,dots)
+Manhattan=matrix(0,dots)
+Uniform=matrix(0,dots)
+Nodes=matrix(0,dots)
+R2=matrix(0,dots,2);
+for (i in 1:dots) {
+  
+  #first attempt of simulation. This creates way more points in the center
+    #than in the extrems
+  #R[i,] = runif(3);
+  #R[i,]=R[i,]/sum(R[i,]);
+  ###########################
+  
+  #second attempt
+  #R2[i,]=runif(2);
+  #if (sum(R2[i,])>1) R2[i,]=matrix(1,2)-R2[i,]
+  #R[i,] = cbind(R[i,1],R[i,2],1-R[i,1]-R[i,2]);
+  #R[i,]=R[i,]/sum(R[i,]);
+  ###########################
+  
+  #homogeneous simulation
+  #send an subset of [0,1]x[0,1] which is an equilateral triangle to the ternary diagram 
+  R2[i,]=runif(2);
+  while ((R2[i,1]<=1/2 & R2[i,2]>2*sin(pi/3)*R2[i,1]) | (R2[i,1]>1/2 & R2[i,2]>2*sin(pi/3)*(1-R2[i,1])))
+  R2[i,]=runif(2);
+  
+  
+  R[i,] = cbind(1-R2[i,1]-R2[i,2]/(2*sin(pi/3)),R2[i,2]/sin(pi/3),R2[i,1]-R2[i,2]/(2*sin(pi/3)));
+  #R[i,]=R[i,]/sum(R[i,]);
+  ## here ends the third attempt of simulation
+  ############################
+  
+  S[i,]= alloc(letters[24:26], R[i,], seats, step);
+  
+  
+  #computing the nearest nodes to each point
+  #Euclid[i]=which.min(sqrt(rowSums((nodes/seats-R[i,])^2)))
+  Euclid[i]=which.min(apply((nodes/seats - rep(1,nnodes) %*% t(R[i,]))^2,1,sum))
+  #sqrt not needed bc/ it's a monotone function
+  Manhattan[i]=which.min(apply(abs(nodes/seats - rep(1,nnodes) %*% t(R[i,])),1,sum))
+  #Manhattan[i]=which.min(rowSums(abs(nodes/seats-R[i,])))
+  Uniform[i]=which.min(apply(abs(nodes/seats - rep(1,nnodes) %*% t(R[i,])),1,max))
+  Nodes[i]=which.min(apply(abs(nodes - rep(1,nnodes) %*% t(S[i,])),1,max))
+}
+
+#attaching node points                
+x <-rbind(as.matrix(R[,1]),as.matrix(nodes[,1]/seats))
+y <-rbind(as.matrix(R[,2]),as.matrix(nodes[,2]/seats))
+z <-rbind(as.matrix(R[,3]),as.matrix(nodes[,3]/seats))
+
+#assembling a data frame
+df = data.frame(x ,
+                y ,
+                z ,
+                code= c(rgb(S/seats),matrix("#000000",nnodes)),
+                codeEuclid=c(rgb(nodes[Euclid,]/seats),matrix("#000000",nnodes)),
+                codeManhattan=c(rgb(nodes[Manhattan,]/seats),matrix("#000000",nnodes)),
+                codeUniform=c(rgb(nodes[Uniform,]/seats),matrix("#000000",nnodes)),
+                codeVoronoi=c(Nodes==Euclid,matrix(FALSE,nnodes)) )
+
+#main plot
+plot <- ggtern()
+
+ggtern(data=df,aes(x,y,z,color=code, size = 1+(code=="#000000"),alpha=0.8)) +
+  theme_rgbw() +
+  geom_point() +
+  labs(x="X",y="Y",z="Z",title="Sainte-Laguë Allocation")+
+  #scale_colour_hue()
+  scale_colour_hue(l=25,c=180, h.start=0)
+
+#ploting only the nodes
+df2 = data.frame(x=nodes[,1] ,
+                y=nodes[,2] ,
+                z=nodes[,3] ,
+                #labeltext=cbind(as.character(x),matrix("-",nnodes),as.character(y),matrix("-",nnodes),as.character(z)),
+                labeltext=cbind(as.character(nodes[,1]),matrix("-",nnodes),as.character(nodes[,2]),matrix("-",nnodes),as.character(nodes[,3])),
+                labeltext=do.call("paste0",as.data.frame(labeltext)),
+                code= rgb(nodes/seats) )
+
+ggtern(data=df2,aes(x,y,z)) +
+  #theme_rgbw() +
+  geom_point(size=2) +
+  geom_text(aes(label=paste0(labeltext)),hjust=0.5,vjust=-0.6, size=3)+
+  labs(x="X",y="Y",z="Z",title="Allocation nodes")
+
+#ploting Voronoi regions:
+
+ggtern(data=df,aes(x,y,z,color=codeEuclid, size = 1+(codeEuclid=="#000000")*2, alpha=0.8)) +
+  theme_rgbw() +
+  geom_point() +
+  labs(x="X",y="Y",z="Z",title="Euclid Voronoi Regions")+
+  #scale_colour_brewer(palette="Paired")
+  scale_colour_hue(l=25,c=180, h.start=0)#palette="Paired")
+
+ggtern(data=df,aes(x,y,z,color=codeManhattan, size = 1+(codeManhattan=="#000000")*2, alpha=0.8)) +
+  theme_rgbw() +
+  geom_point() +
+  labs(x="X",y="Y",z="Z",title="Manhattan Voronoi Regions")+
+  #scale_colour_brewer(palette="Paired")
+  scale_colour_hue(l=25,c=180, h.start=0)#palette="Paired")
+
+ggtern(data=df,aes(x,y,z,color=codeUniform, size = 1+(codeUniform=="#000000")*2, alpha=0.8)) +
+  theme_rgbw() +
+  geom_point() +
+  labs(x="X",y="Y",z="Z",title="Uniform Voronoi Regions")+
+  #scale_colour_brewer(palette="Paired")
+  scale_colour_hue(l=25,c=180, h.start=0)#palette="Paired")
+
+sum(Euclid==Manhattan)/dots
+sum(Uniform==Manhattan)/dots
+sum(Uniform==Euclid)/dots
+#points allocated in their corresponding Voronoi region
+sum(Nodes==Euclid)/dots
+
+
+#misfit points
+ggtern(data=df,aes(x,y,z,color=codeVoronoi, size = 1+(codeEuclid=="#000000")*2, alpha=0.8)) +
+  theme_rgbw() +
+  geom_point() +
+  labs(x="X",y="Y",z="Z",title="Misfit points")#+
+  #scale_colour_brewer(palette="Paired")
+#scale_colour_hue(l=25,c=180, h.start=0)#palette="Paired")
+
+  
+#scale_colour_hue(l=60,c=180, h.start=0)#palette="Paired") 
+#scale_colour_hue(l=25,c=180, h.start=0)#palette="Paired")
+
+################################3
+#election result plots
+
+#random results
+votes <- sample(1:10000, 3) 
+votes <- votes/sum(votes)
+rS=alloc(letters[1:3], votes, 10, 1) 
+rcode=matrix(1,nnodes)
+#ploting only the nodes
+df2 = data.frame(x=c(nodes[,1],votes[1]) ,
+                 y=c(nodes[,2],votes[2]) ,
+                 z=c(nodes[,3],votes[3]) , 
+                 rcode=c(rcode,2) )
+
+
+ggtern(data=df2,aes(x,y,z, color=rcode, alpha=0.9)) +
+  #theme_rgbw() +
+  geom_point() +
+  labs(x="X",y="Y",z="Z",title="Allocation nodes")
+
+  
+#example
+#seats=7; step=1;
+nelect=10;
+votes=matrix(0,3,nelect)
+votes[1,]=c(355,437,282,393,408,479,468,356,287,141)
+votes[3,]=c(258,  0,185,144,159, 90, 47, 73,114,140)
+votes[2,]=c(  0,  0, 82,  0,  0,  0,  0,  0,  0,139)
+votes <- votes/sum(votes)
+
+#ploting only the nodes
+df3 = data.frame(x=votes[1,] ,
+                 y=votes[2,] ,
+                 z=votes[3,] ,
+                 t=seq(from=1979, to=2015, by=4)
+                 )
+df3b = data.frame(x=votes[1,1:9] ,
+                 y=votes[2,1:9] ,
+                 z=votes[3,1:9]
+)
+
+ggtern(data=df3,aes(x,y,z, size=2, alpha=0.9)) +
+  #theme_rgbw() +
+  geom_point() +
+  geom_path(data=df4,colour="blue", linetype=3, size=0.7)+
+  labs(x="PSOE",y="Ganemos",z="PP",title="Allocation nodes")
+
+
+##########
+#results plus allocation plot
+
+
+#attaching node points                
+x <-rbind(as.matrix(R[,1]),as.matrix(votes[1,]))
+y <-rbind(as.matrix(R[,2]),as.matrix(votes[2,]))
+z <-rbind(as.matrix(R[,3]),as.matrix(votes[3,]))
+#assembling a data frame
+df4 = data.frame(x,
+                y,
+                z,
+                #code= c(S[,3],matrix(NA,nelect)),
+                code= c(rgb(S/seats),matrix(NA,nelect)),
+                codeEuclid=c(rgb(nodes[Euclid,]/seats),matrix("#000000",nelect)),
+                codeManhattan=c(rgb(nodes[Manhattan,]/seats),matrix("#000000",nelect)),
+                codeUniform=c(rgb(nodes[Uniform,]/seats),matrix("#000000",nelect)),
+                codeVoronoi=c(Nodes==Euclid,matrix(FALSE,nelect)),
+                labeltext=c(matrix("",dots),seq(from=1979, to=2015, by=4))
+                )
+
+#main plot
+plot <- ggtern()
+
+ggtern(data=df4,aes(x,y,z,colour=code,alpha=0.8)) +
+  theme_rgbw() +
+  geom_point(size=3) +
+  geom_text(aes(label=as.character(labeltext)),hjust=-0.1,just=0, size=4)+
+  geom_path(data=df3,colour="blue", linetype=3, size=0.7)+
+  labs(x="SD",y="SOC",z="CL",title="Elecciones Fuente del Arco")+
+  #scale_colour_brewer()
+  #scale_colour_hue()
+  #scale_colour_hue(l=70,c=130, h.start=50)
+  scale_colour_grey(start = 0.4, end = 1, na.value = "red")
+
+geom_text(aes(label=ifelse(code==NA,"a",'')),hjust=0,just=0)+
+
+############################
+#attaching seats numbers to the diagram
+
+  escala=matrix(0,seats+1,4)
+  escala[,1]=seq(from=1/(2*(seats+1)), to=1, by=1/(seats+1))
+  escala[,2]=seq(from=(1-1/(2*(seats+1)))/2, to=0, by=-1/(2*(seats+1)))
+  escala[,3]=seq(from=(1-1/(2*(seats+1)))/2, to=0, by=-1/(2*(seats+1)))
+  escala[,4]=0:seats
+  rowSums(escala)
+  escala[,c(2,1,3,4)]
+  escala[,c(2,3,1,4)]
+  escalas = rbind(escala, escala[,c(2,1,3,4)],escala[,c(2,3,1,4)])
+
+#attaching node points                
+x <-rbind(as.matrix(R[,1]),as.matrix(votes[1,]),as.matrix(escalas[,1]))
+y <-rbind(as.matrix(R[,2]),as.matrix(votes[2,]),as.matrix(escalas[,2]))
+z <-rbind(as.matrix(R[,3]),as.matrix(votes[3,]),as.matrix(escalas[,3]))
+t <-rbind(matrix(0,dots),as.matrix(seq(from=1979, to=2015, by=4)),as.matrix(escalas[,4]))
+
+#assembling a data frame
+df4b = data.frame(x,
+                y,
+                z,
+                t,
+                #code= c(S[,3],matrix(NA,nelect)),
+                code=c(rgb(S/seats),matrix(NA,nelect),matrix("#000000",3*(seats+1))),
+                #codeEuclid=c(rgb(nodes[Euclid,]/seats),matrix("#000000",nelect)),
+                #codeManhattan=c(rgb(nodes[Manhattan,]/seats),matrix("#000000",nelect)),
+                #codeUniform=c(rgb(nodes[Uniform,]/seats),matrix("#000000",nelect)),
+                #codeVoronoi=c(Nodes==Euclid,matrix(FALSE,nelect)),
+                labeltext=c(matrix("",dots),seq(from=1979, to=2015, by=4), escalas[,4] ) 
+                )
+
+ggtern(data=df4b,aes(x,y,z,colour=code,alpha=0.8)) +
+  theme_rgbw() +
+  geom_point(size=3) +
+  geom_text(aes(label=as.character(labeltext)),hjust=-0.2,vjust=-0.2, size=4)+
+  #geom_path(data=df3,colour="blue", linetype=3, size=0.7)+
+  geom_smooth(data=df3, method="loess", formula=y~x,se=F,limitarea=F,fullrange=T,
+              color="blue",size=1,linetype=5)+
+  labs(x="SD",y="SOC",z="CL",title="Elecciones")+
+  #scale_colour_brewer()
+  #scale_colour_hue()
+  #scale_colour_hue(l=70,c=130, h.start=50)
+  scale_colour_grey(start = 0.4, end = 1, na.value = "red")
+  
+
+plot(df3$t,df3$x, type='b', col='red')
+xspline(df3$t,df3$x, shape=1)
+
+############################
+#attaching seats numbers to the diagram
+
+escala=matrix(0,seats+1,4)
+escala[,1]=seq(from=1/(2*(seats+1)), to=1, by=1/(seats+1))
+escala[,2]=seq(from=(1-1/(2*(seats+1)))/2, to=0, by=-1/(2*(seats+1)))
+escala[,3]=seq(from=(1-1/(2*(seats+1)))/2, to=0, by=-1/(2*(seats+1)))
+escala[,4]=0:seats
+rowSums(escala)
+escala[,c(2,1,3,4)]
+escala[,c(2,3,1,4)]
+escalas = rbind(escala, escala[,c(2,1,3,4)],escala[,c(2,3,1,4)])
+
+#attaching node points                
+x <-rbind(as.matrix(R[,1]),as.matrix(escalas[,1]))
+y <-rbind(as.matrix(R[,2]),as.matrix(escalas[,2]))
+z <-rbind(as.matrix(R[,3]),as.matrix(escalas[,3]))
+t <-rbind(matrix(0,dots),as.matrix(escalas[,4]))
+
+#assembling a data frame
+df5 = data.frame(x,
+                y,
+                z,
+                t,
+                #code= c(S[,3],matrix(NA,nelect)),
+                code=c(rgb(S[,c(2,1,3)]/seats),matrix(NA,3*(seats+1))),
+                #codeEuclid=c(rgb(nodes[Euclid,]/seats),matrix("#000000",nelect)),
+                #codeManhattan=c(rgb(nodes[Manhattan,]/seats),matrix("#000000",nelect)),
+                #codeUniform=c(rgb(nodes[Uniform,]/seats),matrix("#000000",nelect)),
+                #codeVoronoi=c(Nodes==Euclid,matrix(FALSE,nelect)),
+                labeltext=c(matrix("",dots), escalas[,4] ) 
+)
+
+ggtern(data=df5,aes(x,y,z,colour=code,alpha=0.8)) +
+  theme_rgbw() +
+  geom_point(size=2) +
+  geom_text(aes(label=as.character(labeltext)),hjust=-0.2,vjust=-0.2, size=4)+
+  labs(x="X",y="Y",z="Z",title="Allocating 7 seats to 3 parties")+
+  #scale_colour_brewer()
+  #scale_colour_hue()
+  #scale_colour_hue(l=70,c=130, h.start=50)
+  scale_colour_grey(start = 0.4, end = 1, na.value = "black")
+
+##########classification
+
+dat=data.frame(code=df5$code[1:dots],
+               x=df5$x[1:dots],
+               y=df5$y[1:dots],
+               z=df5$z[1:dots]
+)
+
+fit <- svm(formula = code~., data = dat, kernel = "radial", cost=10, gamma=1)
+print(fit)
+plot(fit)
+
+#regions and nodes
+label1=matrix(NA,dots)
+label2=label1
+labeltext=label2
+label1=cbind(as.character(nodes[,1]),matrix("-",nnodes),as.character(nodes[,2]),matrix("-",nnodes),as.character(nodes[,3]))
+label2=do.call("paste0",as.data.frame(label1))
+labeltext=rbind(matrix(NA,dots),as.matrix(label2))
+df6=data.frame(x=rbind(as.matrix(R[,1]),as.matrix(nodes[,1])) ,
+               y=rbind(as.matrix(R[,2]),as.matrix(nodes[,2])) ,
+               z=rbind(as.matrix(R[,3]),as.matrix(nodes[,3])) ,
+               
+               #labeltext=cbind(as.character(x),matrix("-",nnodes),as.character(y),matrix("-",nnodes),as.character(z)),
+               
+               labeltext,
+               code= c(rgb(S[,c(2,1,3)]/seats),matrix(NA,nnodes))  )
+  
+ggtern(data=df6,aes(x,y,z,color=code,alpha=0.8)) +
+  theme_rgbw() +
+  geom_point() +
+  geom_text(aes(label=labeltext),hjust=0.5,vjust=-0.6, size=5)+
+  labs(x="X",y="Y",z="Z",title="Allocating 5 seats to 3 parties")+
+  #scale_colour_hue()
+  #scale_colour_hue(l=25,c=180, h.start=0)
+  scale_colour_grey(start = 0.4, end = 1, na.value = "black")

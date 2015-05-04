@@ -8,25 +8,26 @@ install.packages("e1071")
 library(e1071)
 
 #defining a function for the seat allocation
-alloc <- function( candidates, votes, seats, step ){ 
-  tmp <- data.frame( 
-    candidates = rep( candidates, each = seats ), 
-    scores     = as.vector(sapply( votes, function(x) x / 
+alloc <- function(parties, votes, seats, step){ 
+  qtable <- data.frame( 
+    parties = rep(parties, each = seats), 
+    quotients  = as.vector(sapply(votes, function(x) x / 
                                 seq(from=1, to=1+step*(seats-1), by=step) )),
-    votesrep = rep( votes, each = seats )
+    votesrep = rep(votes, each = seats)
   ) 
-  tmp <- tmp$candidates[order( - tmp$scores, -tmp$votesrep )] [1:seats] 
-  table(tmp) 
+  qtable <- qtable$parties[order(-qtable$quotients, -qtable$votesrep)] [1:seats] 
+  table(qtable) 
 }
 
-#D'Hondt example
+#Allcoation example (step=2 Sainte-Laguë; step=1 D'Hondt)
 votes <- sample(1:10000, 5) 
 votes 
 alloc(letters[1:5], votes, 10, 1) 
 
+#presets
 seats=5;
 step=1; #(2 Sainte-Laguë 1 D'Hondt)
-dots=100000
+dots=20000
 
 #define nodes
 t=1;
@@ -39,7 +40,7 @@ for (i in 0:seats){
   }
 }
 
-#core code draft
+#simulation
 S=matrix(0,dots,3)
 R=matrix(0,dots,3)
 x=matrix(0,dots)
@@ -106,8 +107,6 @@ df = data.frame(x ,
                 codeVoronoi=c(Nodes==Euclid,matrix(FALSE,nnodes)) )
 
 #main plot
-plot <- ggtern()
-
 ggtern(data=df,aes(x,y,z,color=code, size = 1+(code=="#000000"),alpha=0.8)) +
   theme_rgbw() +
   geom_point() +
@@ -116,12 +115,13 @@ ggtern(data=df,aes(x,y,z,color=code, size = 1+(code=="#000000"),alpha=0.8)) +
   scale_colour_hue(l=25,c=180, h.start=0)
 
 #ploting only the nodes
+labeltext=matrix(NA,nnodes)
+labeltext=cbind(as.character(nodes[,1]),matrix("-",nnodes),as.character(nodes[,2]),matrix("-",nnodes),as.character(nodes[,3]))
+  #labeltext=cbind(as.character(x),matrix("-",nnodes),as.character(y),matrix("-",nnodes),as.character(z)),
+labeltext=do.call("paste0",as.data.frame(labeltext))
 df2 = data.frame(x=nodes[,1] ,
                 y=nodes[,2] ,
                 z=nodes[,3] ,
-                #labeltext=cbind(as.character(x),matrix("-",nnodes),as.character(y),matrix("-",nnodes),as.character(z)),
-                labeltext=cbind(as.character(nodes[,1]),matrix("-",nnodes),as.character(nodes[,2]),matrix("-",nnodes),as.character(nodes[,3])),
-                labeltext=do.call("paste0",as.data.frame(labeltext)),
                 code= rgb(nodes/seats) )
 
 ggtern(data=df2,aes(x,y,z)) +
@@ -132,27 +132,16 @@ ggtern(data=df2,aes(x,y,z)) +
 
 #ploting Voronoi regions:
 
-ggtern(data=df,aes(x,y,z,color=codeEuclid, size = 1+(codeEuclid=="#000000")*2, alpha=0.8)) +
+ggtern(data=df,aes(x,y,z,color=codeEuclid, size = codeEuclid=="#000000", alpha=0.8)) +
+#ggtern(data=df,aes(x,y,z,color=codeManhattan, size = codeManhattan=="#000000", alpha=0.8)) +
+#ggtern(data=df,aes(x,y,z,color=codeUniform, size = codeUniform=="#000000", alpha=0.8)) +
   theme_rgbw() +
   geom_point() +
   labs(x="X",y="Y",z="Z",title="Euclid Voronoi Regions")+
   #scale_colour_brewer(palette="Paired")
   scale_colour_hue(l=25,c=180, h.start=0)#palette="Paired")
 
-ggtern(data=df,aes(x,y,z,color=codeManhattan, size = 1+(codeManhattan=="#000000")*2, alpha=0.8)) +
-  theme_rgbw() +
-  geom_point() +
-  labs(x="X",y="Y",z="Z",title="Manhattan Voronoi Regions")+
-  #scale_colour_brewer(palette="Paired")
-  scale_colour_hue(l=25,c=180, h.start=0)#palette="Paired")
-
-ggtern(data=df,aes(x,y,z,color=codeUniform, size = 1+(codeUniform=="#000000")*2, alpha=0.8)) +
-  theme_rgbw() +
-  geom_point() +
-  labs(x="X",y="Y",z="Z",title="Uniform Voronoi Regions")+
-  #scale_colour_brewer(palette="Paired")
-  scale_colour_hue(l=25,c=180, h.start=0)#palette="Paired")
-
+#equivalence between Voronoi regions w/ different distances and between those and electoral regions
 sum(Euclid==Manhattan)/dots
 sum(Uniform==Manhattan)/dots
 sum(Uniform==Euclid)/dots
@@ -216,12 +205,13 @@ df3b = data.frame(x=votes[1,1:9] ,
 ggtern(data=df3,aes(x,y,z, size=2, alpha=0.9)) +
   #theme_rgbw() +
   geom_point() +
-  geom_path(data=df4,colour="blue", linetype=3, size=0.7)+
-  labs(x="PSOE",y="Ganemos",z="PP",title="Allocation nodes")
+  geom_path(data=df3b,colour="blue", linetype=3, size=0.7)+
+  labs(x="Soc-Dem",y="Soc-Com",z="Lib-Con",title="Allocation nodes")
 
 
 ##########
-#results plus allocation plot
+#results plus allocation plot #### plot a smooth curve through the results
+                              #### not completed  # as a functiom of time
 
 
 #attaching node points                
@@ -241,8 +231,6 @@ df4 = data.frame(x,
                 labeltext=c(matrix("",dots),seq(from=1979, to=2015, by=4))
                 )
 
-#main plot
-plot <- ggtern()
 
 ggtern(data=df4,aes(x,y,z,colour=code,alpha=0.8)) +
   theme_rgbw() +
@@ -255,7 +243,7 @@ ggtern(data=df4,aes(x,y,z,colour=code,alpha=0.8)) +
   #scale_colour_hue(l=70,c=130, h.start=50)
   scale_colour_grey(start = 0.4, end = 1, na.value = "red")
 
-geom_text(aes(label=ifelse(code==NA,"a",'')),hjust=0,just=0)+
+#geom_text(aes(label=ifelse(code==NA,"a",'')),hjust=0,just=0)+
 
 ############################
 #attaching seats numbers to the diagram
@@ -304,11 +292,24 @@ ggtern(data=df4b,aes(x,y,z,colour=code,alpha=0.8)) +
   scale_colour_grey(start = 0.4, end = 1, na.value = "red")
   
 
-plot(df3$t,df3$x, type='b', col='red')
-xspline(df3$t,df3$x, shape=1)
+#plot(df3$t,df3$x, type='b', col='red')
+#xspline(df3$t,df3$x, shape=1)
+
+
+##########classification  ###not completed
+
+dat=data.frame(code=df5$code[1:dots],
+               x=df5$x[1:dots],
+               y=df5$y[1:dots],
+               z=df5$z[1:dots]
+)
+
+fit <- svm(formula = code~., data = dat, kernel = "radial", cost=10, gamma=1)
+print(fit)
+plot(fit)
 
 ############################
-#attaching seats numbers to the diagram
+#attaching seat levels to the diagram
 
 escala=matrix(0,seats+1,4)
 escala[,1]=seq(from=1/(2*(seats+1)), to=1, by=1/(seats+1))
@@ -328,16 +329,16 @@ t <-rbind(matrix(0,dots),as.matrix(escalas[,4]))
 
 #assembling a data frame
 df5 = data.frame(x,
-                y,
-                z,
-                t,
-                #code= c(S[,3],matrix(NA,nelect)),
-                code=c(rgb(S[,c(2,1,3)]/seats),matrix(NA,3*(seats+1))),
-                #codeEuclid=c(rgb(nodes[Euclid,]/seats),matrix("#000000",nelect)),
-                #codeManhattan=c(rgb(nodes[Manhattan,]/seats),matrix("#000000",nelect)),
-                #codeUniform=c(rgb(nodes[Uniform,]/seats),matrix("#000000",nelect)),
-                #codeVoronoi=c(Nodes==Euclid,matrix(FALSE,nelect)),
-                labeltext=c(matrix("",dots), escalas[,4] ) 
+                 y,
+                 z,
+                 t,
+                 #code= c(S[,3],matrix(NA,nelect)),
+                 code=c(rgb(S[,c(2,1,3)]/seats),matrix(NA,3*(seats+1))),
+                 #codeEuclid=c(rgb(nodes[Euclid,]/seats),matrix("#000000",nelect)),
+                 #codeManhattan=c(rgb(nodes[Manhattan,]/seats),matrix("#000000",nelect)),
+                 #codeUniform=c(rgb(nodes[Uniform,]/seats),matrix("#000000",nelect)),
+                 #codeVoronoi=c(Nodes==Euclid,matrix(FALSE,nelect)),
+                 labeltext=c(matrix("",dots), escalas[,4] ) 
 )
 
 ggtern(data=df5,aes(x,y,z,colour=code,alpha=0.8)) +
@@ -350,19 +351,10 @@ ggtern(data=df5,aes(x,y,z,colour=code,alpha=0.8)) +
   #scale_colour_hue(l=70,c=130, h.start=50)
   scale_colour_grey(start = 0.4, end = 1, na.value = "black")
 
-##########classification
 
-dat=data.frame(code=df5$code[1:dots],
-               x=df5$x[1:dots],
-               y=df5$y[1:dots],
-               z=df5$z[1:dots]
-)
-
-fit <- svm(formula = code~., data = dat, kernel = "radial", cost=10, gamma=1)
-print(fit)
-plot(fit)
-
-#regions and nodes
+###################################
+###################################
+#plot regions and nodes #definitive diagram
 label1=matrix(NA,dots)
 label2=label1
 labeltext=label2

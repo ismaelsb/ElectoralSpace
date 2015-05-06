@@ -20,14 +20,14 @@ alloc <- function(parties, votes, seats, step){
 }
 
 #Allcoation example (step=2 Sainte-Laguë; step=1 D'Hondt)
-votes <- sample(1:10000, 5) 
+votes <- sample(1:1000, 5) 
 votes 
 alloc(letters[1:5], votes, 10, 1) 
 
 #presets
 seats=5;
 step=1; #(2 Sainte-Laguë 1 D'Hondt)
-dots=20000
+dots=50000
 
 #define nodes
 t=1;
@@ -51,15 +51,18 @@ Manhattan=matrix(0,dots)
 Uniform=matrix(0,dots)
 Nodes=matrix(0,dots)
 R2=matrix(0,dots,2);
+#R2=runif(dosts*2)
+#dim(R2)<-c(dots,2)
 for (i in 1:dots) {
   
-  #first attempt of simulation. This creates way more points in the center
+  #first simulation. This creates way more points in the center
     #than in the extrems
+  #this projects points in[0,1]^3 to the sum(x)=1 hyperplane
   #R[i,] = runif(3);
   #R[i,]=R[i,]/sum(R[i,]);
   ###########################
   
-  #second attempt
+  #second simulation
   #R2[i,]=runif(2);
   #if (sum(R2[i,])>1) R2[i,]=matrix(1,2)-R2[i,]
   #R[i,] = cbind(R[i,1],R[i,2],1-R[i,1]-R[i,2]);
@@ -75,7 +78,7 @@ for (i in 1:dots) {
   
   R[i,] = cbind(1-R2[i,1]-R2[i,2]/(2*sin(pi/3)),R2[i,2]/sin(pi/3),R2[i,1]-R2[i,2]/(2*sin(pi/3)));
   #R[i,]=R[i,]/sum(R[i,]);
-  ## here ends the third attempt of simulation
+  ## here ends the third simulation
   ############################
   
   S[i,]= alloc(letters[24:26], R[i,], seats, step);
@@ -107,10 +110,10 @@ df = data.frame(x ,
                 codeVoronoi=c(Nodes==Euclid,matrix(FALSE,nnodes)) )
 
 #main plot
-ggtern(data=df,aes(x,y,z,color=code, size = 1+(code=="#000000"),alpha=0.8)) +
+ggtern(data=df,aes(x,y,z,color=code, size = code=="#000000",alpha=0.8)) +
   theme_rgbw() +
   geom_point() +
-  labs(x="X",y="Y",z="Z",title="Sainte-Laguë Allocation")+
+  labs(x="X",y="Y",z="Z",title="Allocation")+
   #scale_colour_hue()
   scale_colour_hue(l=25,c=180, h.start=0)
 
@@ -147,13 +150,15 @@ sum(Uniform==Manhattan)/dots
 sum(Uniform==Euclid)/dots
 #points allocated in their corresponding Voronoi region
 sum(Nodes==Euclid)/dots
+#size of the regions # 1 ~= dots/nnodes
+sapply(1:nnodes, function(x) sum(Nodes==x)*nnodes/dots)
 
 
-#misfit points
-ggtern(data=df,aes(x,y,z,color=codeVoronoi, size = 1+(codeEuclid=="#000000")*2, alpha=0.8)) +
+#malapportionment
+ggtern(data=df,aes(x,y,z,color=codeVoronoi, size = codeEuclid=="#000000", alpha=0.8)) +
   theme_rgbw() +
   geom_point() +
-  labs(x="X",y="Y",z="Z",title="Misfit points")#+
+  labs(x="X",y="Y",z="Z",title="Malapportionment")#+
   #scale_colour_brewer(palette="Paired")
 #scale_colour_hue(l=25,c=180, h.start=0)#palette="Paired")
 
@@ -206,7 +211,7 @@ ggtern(data=df3,aes(x,y,z, size=2, alpha=0.9)) +
   #theme_rgbw() +
   geom_point() +
   geom_path(data=df3b,colour="blue", linetype=3, size=0.7)+
-  labs(x="Soc-Dem",y="Soc-Com",z="Lib-Con",title="Allocation nodes")
+  labs(x="SocLib",y="SocCom",z="LibCon",title="Allocation nodes")
 
 
 ##########
@@ -237,7 +242,7 @@ ggtern(data=df4,aes(x,y,z,colour=code,alpha=0.8)) +
   geom_point(size=3) +
   geom_text(aes(label=as.character(labeltext)),hjust=-0.1,just=0, size=4)+
   geom_path(data=df3,colour="blue", linetype=3, size=0.7)+
-  labs(x="SD",y="SOC",z="CL",title="Elecciones Fuente del Arco")+
+  labs(x="SD",y="SOC",z="CL",title="Past Elections")+
   #scale_colour_brewer()
   #scale_colour_hue()
   #scale_colour_hue(l=70,c=130, h.start=50)
@@ -285,7 +290,7 @@ ggtern(data=df4b,aes(x,y,z,colour=code,alpha=0.8)) +
   #geom_path(data=df3,colour="blue", linetype=3, size=0.7)+
   geom_smooth(data=df3, method="loess", formula=y~x,se=F,limitarea=F,fullrange=T,
               color="blue",size=1,linetype=5)+
-  labs(x="SD",y="SOC",z="CL",title="Elecciones")+
+  labs(x="SD",y="SOC",z="CL",title="Past Elections")+
   #scale_colour_brewer()
   #scale_colour_hue()
   #scale_colour_hue(l=70,c=130, h.start=50)
@@ -378,3 +383,32 @@ ggtern(data=df6,aes(x,y,z,color=code,alpha=0.8)) +
   #scale_colour_hue()
   #scale_colour_hue(l=25,c=180, h.start=0)
   scale_colour_grey(start = 0.4, end = 1, na.value = "black")
+
+###################################
+#alternative series of divisors
+
+seats=7
+div=matrix(1,seats)
+#define a series of divisors
+for (i in 3:seats){
+  div[i]=div[i-1]+div[i-2]
+}
+#
+step=sqrt(2)
+for (i in 2:seats){
+  div[i]=div[i-1]*step
+}
+
+alloc2 <- function(parties, votes, seats){ 
+  qtable <- data.frame( 
+
+    parties = rep(parties, each = seats), 
+    quotients  = as.vector(sapply(votes, function(x) x/div)),
+    votesrep = rep(votes, each = seats)
+  ) 
+  qtable <- qtable$parties[order(-qtable$quotients, -qtable$votesrep)] [1:seats] 
+  table(qtable) 
+}
+votes <- sample(1:1000, 5) 
+votes 
+alloc2(letters[1:5], votes, seats) 

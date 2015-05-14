@@ -19,7 +19,7 @@ alloc <- function(parties, votes, seats, step){
   table(qtable) 
 }
 
-#Allcoation example (step=2 Sainte-Laguë; step=1 D'Hondt)
+#Allocation example (step=2 Sainte-Laguë; step=1 D'Hondt)
 votes <- sample(1:1000, 5) 
 votes 
 alloc(letters[1:5], votes, 10, 1) 

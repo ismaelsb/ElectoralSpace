@@ -1,3 +1,8 @@
+#Install ggtern from an online CRAN repository
+install.packages("ggtern")
+#Load the ggtern library
+library(ggtern)
+
 #defining a function for the seat allocation
 alloc <- function(parties, votes, seats, step){ 
   qtable <- data.frame( 
@@ -540,7 +545,7 @@ dfOrder2 = data.frame(x ,
 )
 
 #main plot
-ggtern(data=dfOrder,aes(x,y,z,color=code,alpha=0.8)) +
+ggtern(data=dfOrder2,aes(x,y,z,color=code,alpha=0.8)) +
   theme_rgbw() +
   geom_point() +
   labs(x="X",y="Y",z="Z",title="Allocation ordering regions")+

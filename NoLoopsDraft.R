@@ -35,7 +35,6 @@ uniformNode <- function (x) {
   
 }
 
-
 #Allocation example (step=2 Sainte-Laguë; step=1 D'Hondt)
 votes <- sample(1:1000, 5) 
 votes 
@@ -71,12 +70,9 @@ Nodes=matrix(0,dots)
 Rc=matrix(0,dots,2);
 
 
-
-Uniform=apply(R, 1, uniformNode)
-
 Rc=matrix(runif(2*dots), nrow=dots, ncol=2)
 R = matrix(apply(Rc,1, CartesianToTernary), nrow=dots, ncol=3, byrow=TRUE)
-
+Uniform=apply(R, 1, uniformNode)
 S = matrix(apply(R, 1, function(x) alloc(letters[24:26], x, seats, step)), nrow=dots, ncol=3, byrow=TRUE)
  
   

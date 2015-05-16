@@ -77,8 +77,9 @@ AllocatedNode <- function (y, nodes, nnodes) {
   
 }
 
-AssembleData <- function (R, seats, step, threshold) {
+AssembleData <- function (R, seats, step, threshold ,votes=matrix(0,1), dates=matrix(0,1)) {
   
+  dots=dim(R)[1]
   #define nodes
   nnodes=(seats+1)*(seats+2)/2;
   nodes= matrix(0,nnodes,3);
@@ -88,12 +89,7 @@ AssembleData <- function (R, seats, step, threshold) {
       nodes[t,] = c(i,j-i,seats-j);
       t=t+1;
     }
-  }
-  
-  #attach node points                
-  x <-rbind(as.matrix(R[,1]),as.matrix(nodes[,1]/seats))
-  y <-rbind(as.matrix(R[,2]),as.matrix(nodes[,2]/seats))
-  z <-rbind(as.matrix(R[,3]),as.matrix(nodes[,3]/seats))
+  }  
   
   #allocate seats
   S  = matrix(apply(R, 1, function(x) alloc(letters[24:26], x, seats, step, threshold)), nrow=dots, ncol=3, byrow=TRUE)
@@ -104,25 +100,54 @@ AssembleData <- function (R, seats, step, threshold) {
   Euclid    = apply(R, 1, EuclidNearest,    nodes = nodes, nnodes=nnodes)
   Allocated = apply(S, 1, AllocatedNode,    nodes = nodes, nnodes=nnodes)
   
+  #node labels for seats
+  label=cbind(as.character(nodes[,1]),matrix("-",nnodes),as.character(nodes[,2]),matrix("-",nnodes),as.character(nodes[,3]))
+  label=do.call("paste0",as.data.frame(label))
+  label=rbind(matrix("",dots),as.matrix(label))
+  
+  #dates column
+  time=matrix(NA,dots+nnodes)
+  if (norm(dates)!=0) time = rbind(time, dates)
+  
+  #attach node points                
+  x <-rbind(as.matrix(R[,1]),as.matrix(nodes[,1]/seats))
+  y <-rbind(as.matrix(R[,2]),as.matrix(nodes[,2]/seats))
+  z <-rbind(as.matrix(R[,3]),as.matrix(nodes[,3]/seats))
+  
+  t=0;
+  if (norm(votes) != 0){
+    
+    x <- c(x, votes[,1])
+    y <- c(y, votes[,2])
+    z <- c(z, votes[,3])
+    t=dim(votes)[1]
+    label = c(label,as.character(dates))
+    
+  }
+  
   #assembling a data frame
   df = data.frame(
     x ,
     y ,
     z ,
     
-    code          = c(rgb(S/seats), matrix(NA,nnodes)),
+    code          = c(rgb(S/seats), matrix(NA,nnodes+t)),
     
-    Euclid        = c(Euclid, matrix(NA,nnodes)),
-    codeEuclid    = c(rgb(nodes[Euclid,]/seats), matrix(NA,nnodes)),
+    Euclid        = c(Euclid, matrix(NA,nnodes+t)),
+    codeEuclid    = c(rgb(nodes[Euclid[1:dots],]/seats), matrix(NA,nnodes+t)),
     
-    Manhattan     = c(Manhattan, matrix(NA,nnodes)),
-    codeManhattan = c(rgb(nodes[Manhattan,]/seats), matrix(NA,nnodes)),
+    Manhattan     = c(Manhattan, matrix(NA,nnodes+t)),
+    codeManhattan = c(rgb(nodes[Manhattan[1:dots],]/seats), matrix(NA,nnodes+t)),
     
-    Uniform       = c(Uniform, matrix(NA,nnodes)),
-    codeUniform   = c(rgb(nodes[Uniform,]/seats), matrix(NA,nnodes)),
+    Uniform       = c(Uniform, matrix(NA,nnodes+t)),
+    codeUniform   = c(rgb(nodes[Uniform[1:dots],]/seats), matrix(NA,nnodes+t)),
     
-    Allocated     = c(Allocated, matrix(NA,nnodes)),
-    Malapportionment = c(Allocated!=Euclid, matrix(NA,nnodes)) 
+    Allocated     = c(Allocated, matrix(NA,nnodes+t)),
+    Malapportionment = c((Allocated!=Euclid)[1:dots], matrix(NA,nnodes+t)),
+    
+    label,
+    
+    time
   )
    
   return(df);
@@ -130,14 +155,15 @@ AssembleData <- function (R, seats, step, threshold) {
 }
 
 #Allocation example (step=2 Sainte-Laguë; step=1 D'Hondt)
-votes <- sample(1:1000, 5) 
-votes 
-alloc(letters[1:5], votes, 10, 1, .05) 
+votes <- sample(1:1000, 3) 
+votes
+alloc(letters[1:3], votes, 10, 1, .05) 
+
 
 #presets
 seats=5;
 step=1; #(2 Sainte-Laguë 1 D'Hondt)
-dots=10000
+dots=20000
 threshold=.05
 
 #Generate random electoral results
@@ -159,6 +185,7 @@ df = AssembleData(R, seats, step, threshold)
 ggtern(data=df,aes(x,y,z,color=code,alpha=0.8)) +
   theme_rgbw() +
   geom_point() +
+  geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
   labs(x="X",y="Y",z="Z",title="Allocation")+
   scale_colour_grey(start = 0.4, end = 1, na.value = "black")
 
@@ -166,6 +193,7 @@ ggtern(data=df,aes(x,y,z,color=code,alpha=0.8)) +
 ggtern(data=df,aes(x,y,z,color=codeManhattan, alpha=0.8)) +
   theme_rgbw() +
   geom_point() +
+  geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
   labs(x="X",y="Y",z="Z",title="Voronoi")+
   scale_colour_grey(start = 0.4, end = 1, na.value = "black")
 
@@ -186,3 +214,33 @@ ggtern(data=df,aes(x,y,z,color=!Malapportionment, alpha=0.8)) +
   geom_point() +
   labs(x="X",y="Y",z="Z",title="Malapportionment")+
   scale_colour_grey(na.value = "black")
+
+
+
+
+###############################################
+#history of election results
+#example
+#seats=7; step=1;
+nelect=10;
+votes=matrix(0,nelect,3)
+votes[,1]=c(355,437,282,393,408,479,468,356,287,141)
+votes[,3]=c(258,  0,185,144,159, 90, 47, 73,114,140)
+votes[,2]=c(  0,  0, 82,  0,  0,  0,  0,  0,  0,139)
+votes <- votes/rowSums(votes)
+dates=as.matrix(seq(from=1979, to=2015, by=4))
+
+dfvotes = AssembleData(R, seats, step, threshold, votes, dates)
+
+#df2 = df[(dots+nnodes+1):(dots+nnodes+dim(dates)),]
+
+
+ggtern(data=dfvotes,aes(x,y,z,color=code,alpha=0.8)) +
+  theme_rgbw() +
+  geom_point() +
+  geom_text(aes(label=label), color="red", hjust=0.5,vjust=-0.6, size=3)+
+  #geom_path(data=dfvotes,colour="blue", linetype=3, size=0.7)+
+  labs(x="SocLib",y="SocCom",z="LibCon",title="Past Elections")+
+  scale_colour_grey(start = 0.4, end = 1, na.value = "black")
+
+

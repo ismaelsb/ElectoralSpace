@@ -19,14 +19,14 @@ alloc <- function(parties, votes, seats, step){
   table(qtable) 
 }
 
-#Allocation example (step=2 Sainte-Laguë; step=1 D'Hondt)
+#Allocation example (step=2 Sainte-LaguÃ«; step=1 D'Hondt)
 votes <- sample(1:1000, 5) 
 votes 
 alloc(letters[1:5], votes, 10, 1) 
 
 #presets
 seats=5;
-step=1; #(2 Sainte-Laguë 1 D'Hondt)
+step=1; #(2 Sainte-LaguÃ« 1 D'Hondt)
 dots=50000
 
 #define nodes

@@ -77,7 +77,7 @@ AllocatedNode <- function (y, nodes, nnodes) {
   
 }
 
-AssembleData <- function (R, seats, step, threshold ,votes=matrix(0,1), dates=matrix(0,1)) {
+AssembleData <- function (R, seats, step, threshold, vectorcode=as.matrix(3^(0:(seats-1))), votes=matrix(0,1), election=matrix(0,1)) {
   
   dots=dim(R)[1]
   #define nodes
@@ -94,6 +94,11 @@ AssembleData <- function (R, seats, step, threshold ,votes=matrix(0,1), dates=ma
   #allocate seats
   S  = matrix(apply(R, 1, function(x) alloc(letters[24:26], x, seats, step, threshold)), nrow=dots, ncol=3, byrow=TRUE)
   
+  AllocOrder  = matrix(apply(R, 1, function(x) allocOrder(1:3, x, seats, step, threshold)), nrow=dots, ncol=seats, byrow=TRUE)
+  AllocOrderCode= (matrix(AllocOrder, ncol=seats)-1) %*% as.matrix(vectorcode)
+  
+  #S= table(AllocOrder)
+  
   #Indexes for Voronoi and Allocation regions
   Uniform   = apply(R, 1, UniformNearest,   nodes = nodes, nnodes=nnodes)
   Manhattan = apply(R, 1, ManhattanNearest, nodes = nodes, nnodes=nnodes)
@@ -105,49 +110,55 @@ AssembleData <- function (R, seats, step, threshold ,votes=matrix(0,1), dates=ma
   label=do.call("paste0",as.data.frame(label))
   label=rbind(matrix("",dots),as.matrix(label))
   
-  #dates column
-  time=matrix(NA,dots+nnodes)
-  if (norm(dates)!=0) time = rbind(time, dates)
+  #elections
+  elect = matrix(NA,dots+nnodes)
+  if (norm(election)!=0) elect = rbind(elect, election)
   
   #attach node points                
   x <-rbind(as.matrix(R[,1]),as.matrix(nodes[,1]/seats))
   y <-rbind(as.matrix(R[,2]),as.matrix(nodes[,2]/seats))
   z <-rbind(as.matrix(R[,3]),as.matrix(nodes[,3]/seats))
   
-  t=0;
+  el=0;
   if (norm(votes) != 0){
     
     x <- c(x, votes[,1])
     y <- c(y, votes[,2])
     z <- c(z, votes[,3])
-    t=dim(votes)[1]
-    label = c(label,as.character(dates))
+    el=dim(votes)[1]
+    label = c(label,as.character(election))
     
   }
   
+  
   #assembling a data frame
   df = data.frame(
+    
+    type          = c(matrix("dot",dots), matrix("node",nnodes), matrix("vote",el,1)),
+    
     x ,
     y ,
     z ,
     
-    code          = c(rgb(S/seats), matrix(NA,nnodes+t)),
+    code          = c(rgb(S/seats), matrix(NA,nnodes+el)),
     
-    Euclid        = c(Euclid, matrix(NA,nnodes+t)),
-    codeEuclid    = c(rgb(nodes[Euclid[1:dots],]/seats), matrix(NA,nnodes+t)),
+    AllocOrderCode= c(rgb(AllocOrderCode/(3^seats),0,0), matrix(NA,nnodes+el)),
     
-    Manhattan     = c(Manhattan, matrix(NA,nnodes+t)),
-    codeManhattan = c(rgb(nodes[Manhattan[1:dots],]/seats), matrix(NA,nnodes+t)),
+    Euclid        = c(Euclid, matrix(NA,nnodes+el)),
+    codeEuclid    = c(rgb(nodes[Euclid[1:dots],]/seats), matrix(NA,nnodes+el)),
     
-    Uniform       = c(Uniform, matrix(NA,nnodes+t)),
-    codeUniform   = c(rgb(nodes[Uniform[1:dots],]/seats), matrix(NA,nnodes+t)),
+    Manhattan     = c(Manhattan, matrix(NA,nnodes+el)),
+    codeManhattan = c(rgb(nodes[Manhattan[1:dots],]/seats), matrix(NA,nnodes+el)),
     
-    Allocated     = c(Allocated, matrix(NA,nnodes+t)),
-    Malapportionment = c((Allocated!=Euclid)[1:dots], matrix(NA,nnodes+t)),
+    Uniform       = c(Uniform, matrix(NA,nnodes+el)),
+    codeUniform   = c(rgb(nodes[Uniform[1:dots],]/seats), matrix(NA,nnodes+el)),
+    
+    Allocated     = c(Allocated, matrix(NA,nnodes+el)),
+    Malapportionment = c((Allocated!=Euclid)[1:dots], matrix(NA,nnodes+el)),
     
     label,
     
-    time
+    elect
   )
   
   return(df);
@@ -159,11 +170,10 @@ votes <- sample(1:1000, 3)
 votes
 alloc(letters[1:3], votes, 10, 1, .05) 
 
-
 #presets
 seats=5;
 step=1; #(2 Sainte-Laguë 1 D'Hondt)
-dots=20000
+dots=50000
 threshold=.05
 
 #Generate random electoral results
@@ -180,6 +190,9 @@ R  = matrix(apply(Rc,1, CartesianToTernary), nrow=dots, ncol=3, byrow=TRUE)
 #Assemble the data frame
 df = AssembleData(R, seats, step, threshold)
 
+#reverse coding for ordering regions
+#vectorcoderev = as.matrix(rev(3^(0:(seats-1))))
+#df = AssembleData(R, seats, step, threshold, vectorcoderev)
 
 #Allocation
 ggtern(data=df,aes(x,y,z,color=code,alpha=0.8)) +
@@ -215,24 +228,25 @@ ggtern(data=df,aes(x,y,z,color=!Malapportionment, alpha=0.8)) +
   labs(x="X",y="Y",z="Z",title="Malapportionment")+
   scale_colour_grey(na.value = "black")
 
+#ordering subregions
+ggtern(data=df,aes(x,y,z,color=AllocOrderCode,alpha=0.8)) +
+  theme_rgbw() +
+  geom_point() +
+  labs(x="X",y="Y",z="Z",title="Allocation ordering regions")+
+  scale_colour_grey(start = 0.1, end = 1, na.value = "black")
 
 
-
-###############################################
 #history of election results
 #example
 #seats=7; step=1;
 nelect=10;
-votes=matrix(0,nelect,3)
-votes[,1]=c(355,437,282,393,408,479,468,356,287,141)
-votes[,3]=c(258,  0,185,144,159, 90, 47, 73,114,140)
-votes[,2]=c(  0,  0, 82,  0,  0,  0,  0,  0,  0,139)
+votes=matrix(runif(nelect*3),nelect,3)
 votes <- votes/rowSums(votes)
-dates=as.matrix(seq(from=1979, to=2015, by=4))
+election=as.matrix(seq(from=1979, to=2015, by=4))
 
-dfvotes = AssembleData(R, seats, step, threshold, votes, dates)
+dfvotes = AssembleData(R, seats, step, threshold, votes=votes, election=election)
 
-#df2 = df[(dots+nnodes+1):(dots+nnodes+dim(dates)),]
+#df2 = df[(dots+nnodes+1):(dots+nnodes+dim(election)),]
 
 
 ggtern(data=dfvotes,aes(x,y,z,color=code,alpha=0.8)) +

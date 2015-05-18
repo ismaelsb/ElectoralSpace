@@ -7,4 +7,4 @@ En el código se incluyen la función de asignación electoral y la asignación 
 
 Del borrador https://github.com/ismaelsb/ElectoralSpace/blob/master/Draft.R se han sustituido los bucles por nuevas funciones y cáculos vectorizados para ganar eficiencia.
 
-Se puede ver una muestra de los resultados en https://www.dropbox.com/s/vm0qqpsv5c5vhxp/ElectoralSpace1.html?dl=0
+Se puede ver una muestra de los resultados en https://dl.dropboxusercontent.com/u/1570957/ElectoralSpace1.html

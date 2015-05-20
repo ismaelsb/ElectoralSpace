@@ -3,32 +3,34 @@ install.packages("ggtern")
 #Load the ggtern library
 library(ggtern)
 
-#defining a function for the seat allocation
+#defining a function for the seat allocation and its ordering
 alloc <- function(parties, votes, seats, step, threshold){ 
   votes=votes*(votes>=(threshold*sum(votes)))
-  qtable <- data.frame( 
+  quotienstable <- data.frame( 
     parties = rep(parties, each = seats), 
     quotients  = as.vector(sapply(votes, function(x) x / 
                                     seq(from=1, to=1+step*(seats-1), by=step) )),
     votesrep = rep(votes, each = seats)
   ) 
-  qtable <- qtable$parties[order(-qtable$quotients, -qtable$votesrep)] [1:seats] 
-  table(qtable) 
+  quotienstable <- quotienstable$parties[order(-quotienstable$quotients, -quotienstable$votesrep)] [1:seats] 
+    
+  list(table(quotienstable), as.matrix(quotienstable))
 }
 
-#defining a function for the seat allocation order
-allocOrder <- function(parties, votes, seats, step, threshold){ 
-  votes=votes*(votes>=(threshold*sum(votes)))
-  qtable <- data.frame( 
-    parties = rep(parties, each = seats), 
-    quotients  = as.vector(sapply(votes, function(x) x / 
-                                    seq(from=1, to=1+step*(seats-1), by=step) )),
-    votesrep = rep(votes, each = seats)
-  )
+#define nodes
+generateNodes <- function(seats){ 
+
+  nnodes=(seats+1)*(seats+2)/2;
+  nodes= matrix(0,nnodes,3);
+  t=1;
+  for (i in 0:seats){
+    for (j in i:seats){
+      nodes[t,] = c(i,j-i,seats-j);
+      t=t+1;
+    }
+  }   
+  return(nodes);
   
-  qtable <- qtable$parties[order(-qtable$quotients, -qtable$votesrep)] [1:seats] 
-  #table(qtable)
-  as.matrix(qtable)  
 }
 
 CartesianToTernary <- function (x) {
@@ -80,24 +82,15 @@ AllocatedNode <- function (y, nodes, nnodes) {
 AssembleData <- function (R, seats, step, threshold, vectorcode=as.matrix(3^(0:(seats-1))), votes=matrix(0,1), election=matrix(0,1)) {
   
   dots=dim(R)[1]
-  #define nodes
-  nnodes=(seats+1)*(seats+2)/2;
-  nodes= matrix(0,nnodes,3);
-  t=1;
-  for (i in 0:seats){
-    for (j in i:seats){
-      nodes[t,] = c(i,j-i,seats-j);
-      t=t+1;
-    }
-  }  
+  
+  #nodes
+  nodes  = generateNodes(seats)
+  nnodes = (seats+1)*(seats+2)/2;
   
   #allocate seats
-  S  = matrix(apply(R, 1, function(x) alloc(letters[24:26], x, seats, step, threshold)), nrow=dots, ncol=3, byrow=TRUE)
-  
-  AllocOrder  = matrix(apply(R, 1, function(x) allocOrder(1:3, x, seats, step, threshold)), nrow=dots, ncol=seats, byrow=TRUE)
+  S = matrix(apply(R, 1, function(x) alloc(letters[24:26], x, seats, step, threshold)[[1]]), nrow=dots, ncol=3, byrow=TRUE)
+  AllocOrder  = matrix(apply(R, 1, function(x) alloc(1:3, x, seats, step, threshold)[[2]]), nrow=dots, ncol=seats, byrow=TRUE)  
   AllocOrderCode= (matrix(AllocOrder, ncol=seats)-1) %*% as.matrix(vectorcode)
-  
-  #S= table(AllocOrder)
   
   #Indexes for Voronoi and Allocation regions
   Uniform   = apply(R, 1, UniformNearest,   nodes = nodes, nnodes=nnodes)
@@ -179,9 +172,9 @@ threshold=.05
 #Generate random electoral results
 
 #Ternary simulation. Projects points in[0,1]^3 to the sum(x)=1 hyperplane
-#This creates way more points in the center than in the extrems
-R = matrix(runif(3*dots), nrow=dots, ncol=3)
-R = R/rowSums(R)
+#This creates way more points in the center than in the extremes
+#R = matrix(runif(3*dots), nrow=dots, ncol=3)
+#R = R/rowSums(R)
 
 #Map Cartesian to Ternary to produce a homegeneous simulation
 Rc = matrix(runif(2*dots), nrow=dots, ncol=2)
@@ -256,3 +249,18 @@ ggtern(data=dfvotes,aes(x,y,z,color=code,alpha=0.8)) +
   #geom_path(data=dfvotes,colour="blue", linetype=3, size=0.7)+
   labs(x="SocLib",y="SocCom",z="LibCon",title="Past Elections")+
   scale_colour_grey(start = 0.4, end = 1, na.value = "black")
+
+
+
+
+library('nnet')
+fit <- multinom(Allocated ~ x + y + z, data = df)
+
+summary(fit)
+str(fit)
+plot(fit, df)
+print(fit)
+fit$coefs
+fit$terms
+fit$fitted
+fit$decision.values

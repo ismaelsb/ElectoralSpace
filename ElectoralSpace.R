@@ -202,7 +202,7 @@ df = AssembleData(dots, seats, step, threshold)
 #Allocation
 ggtern(data=df,aes(x,y,z,color=as.factor(AllocCode))) +
   theme_rgbw() +
-  geom_point() +
+  geom_point(alpha=0.8) +
   geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
   labs(x="X",y="Y",z="Z",title="Allocation")+
   scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
@@ -210,7 +210,7 @@ ggtern(data=df,aes(x,y,z,color=as.factor(AllocCode))) +
 #Voronoi
 ggtern(data=df,aes(x,y,z,color=as.factor(Manhattan))) +
   theme_rgbw() +
-  geom_point() +
+  geom_point(alpha=0.8) +
   geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
   labs(x="X",y="Y",z="Z",title="Voronoi")+
   scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
@@ -229,14 +229,14 @@ plot(RegionSize)
 #malapportionment
 ggtern(data=df,aes(x,y,z,color=!Malapportionment)) +
   theme_rgbw() +
-  geom_point() +
+  geom_point(alpha=0.8) +
   labs(x="X",y="Y",z="Z",title="Malapportionment")+
   scale_colour_grey(na.value = "black", guide = FALSE)
 
 #ordering subregions
 ggtern(data=df,aes(x,y,z,color=as.factor(AllocOrderCode))) +
   theme_rgbw() +
-  geom_point() +
+  geom_point(alpha=0.8) +
   labs(x="X",y="Y",z="Z",title="Allocation ordering regions")+
   scale_colour_grey(start = 0.1, end = 1, na.value = "black", guide = FALSE)
 
@@ -256,7 +256,7 @@ dfvotes = AssembleData(dots, seats, step, threshold, votes=votes, election=elect
 
 ggtern(data=dfvotes,aes(x,y,z,color=as.factor(AllocCode))) +
   theme_rgbw() +
-  geom_point() +
+  geom_point(alpha=0.8) +
   geom_text(aes(label=label), color="red", hjust=0.5,vjust=-0.6, size=3)+
   #geom_path(data=dfvotes,colour="blue", linetype=3, size=0.7)+
   labs(x="SocLib",y="SocCom",z="LibCon",title="Past Elections")+

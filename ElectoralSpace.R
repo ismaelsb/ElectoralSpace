@@ -200,20 +200,20 @@ df = AssembleData(dots, seats, step, threshold)
 #df = AssembleData(dots, seats, step, threshold, vectorOrderCode=vectorOrderCoderev)
 
 #Allocation
-ggtern(data=df,aes(x,y,z,color=as.factor(AllocCode),alpha=0.8)) +
+ggtern(data=df,aes(x,y,z,color=as.factor(AllocCode))) +
   theme_rgbw() +
   geom_point() +
   geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
   labs(x="X",y="Y",z="Z",title="Allocation")+
-  scale_colour_grey(start = 0.4, end = 1, na.value = "black")
+  scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
   
 #Voronoi
-ggtern(data=df,aes(x,y,z,color=as.factor(Manhattan), alpha=0.8)) +
+ggtern(data=df,aes(x,y,z,color=as.factor(Manhattan))) +
   theme_rgbw() +
   geom_point() +
   geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
   labs(x="X",y="Y",z="Z",title="Voronoi")+
-  scale_colour_grey(start = 0.4, end = 1, na.value = "black")
+  scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
 
 #equivalence between Voronoi regions using different distances and between those and electoral regions
 sum(df$Euclid[1:dots]==df$Manhattan[1:dots])/dots
@@ -227,18 +227,18 @@ RegionSize = table(df$Allocated[1:dots])/(dots/nnodes)
 plot(RegionSize)
 
 #malapportionment
-ggtern(data=df,aes(x,y,z,color=!Malapportionment, alpha=0.8)) +
+ggtern(data=df,aes(x,y,z,color=!Malapportionment)) +
   theme_rgbw() +
   geom_point() +
   labs(x="X",y="Y",z="Z",title="Malapportionment")+
-  scale_colour_grey(na.value = "black")
+  scale_colour_grey(na.value = "black", guide = FALSE)
 
 #ordering subregions
-ggtern(data=df,aes(x,y,z,color=as.factor(AllocOrderCode),alpha=0.8)) +
+ggtern(data=df,aes(x,y,z,color=as.factor(AllocOrderCode))) +
   theme_rgbw() +
   geom_point() +
   labs(x="X",y="Y",z="Z",title="Allocation ordering regions")+
-  scale_colour_grey(start = 0.1, end = 1, na.value = "black")
+  scale_colour_grey(start = 0.1, end = 1, na.value = "black", guide = FALSE)
 
 
 #history of election results
@@ -254,13 +254,13 @@ dfvotes = AssembleData(dots, seats, step, threshold, votes=votes, election=elect
 #df2 = df[(dots+nnodes+1):(dots+nnodes+dim(election)),]
 
 
-ggtern(data=dfvotes,aes(x,y,z,color=as.factor(AllocCode),alpha=0.8)) +
+ggtern(data=dfvotes,aes(x,y,z,color=as.factor(AllocCode))) +
   theme_rgbw() +
   geom_point() +
   geom_text(aes(label=label), color="red", hjust=0.5,vjust=-0.6, size=3)+
   #geom_path(data=dfvotes,colour="blue", linetype=3, size=0.7)+
   labs(x="SocLib",y="SocCom",z="LibCon",title="Past Elections")+
-  scale_colour_grey(start = 0.4, end = 1, na.value = "black")
+  scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
 
 
 

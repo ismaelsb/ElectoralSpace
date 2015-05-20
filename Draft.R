@@ -965,3 +965,84 @@ ggtern(data=dfOrder2,aes(x,y,z,color=code,alpha=0.8)) +
   #scale_colour_hue(l=25,c=180, h.start=0)
   scale_colour_grey(start = 0.4, end = 1, na.value = "black")
 #although this encoding is more formal I like the first diagram better
+
+
+AssembleData <- function (R, seats, step, threshold, vectorcode=as.matrix(3^(0:(seats-1))), votes=matrix(0,1), election=matrix(0,1)) {
+  
+  dots=dim(R)[1]
+  
+  #nodes
+  nodes  = generateNodes(seats)
+  nnodes = (seats+1)*(seats+2)/2;
+  
+  #allocate seats
+  S = matrix(apply(R, 1, function(x) alloc(letters[24:26], x, seats, step, threshold)[[1]]), nrow=dots, ncol=3, byrow=TRUE)
+  AllocOrder  = matrix(apply(R, 1, function(x) alloc(1:3, x, seats, step, threshold)[[2]]), nrow=dots, ncol=seats, byrow=TRUE)  
+  AllocOrderCode= (matrix(AllocOrder, ncol=seats)-1) %*% as.matrix(vectorcode)
+  
+  #Indexes for Voronoi and Allocation regions
+  Uniform   = apply(R, 1, UniformNearest,   nodes = nodes, nnodes=nnodes)
+  Manhattan = apply(R, 1, ManhattanNearest, nodes = nodes, nnodes=nnodes)
+  Euclid    = apply(R, 1, EuclidNearest,    nodes = nodes, nnodes=nnodes)
+  Allocated = apply(S, 1, AllocatedNode,    nodes = nodes, nnodes=nnodes)
+  
+  #node labels for seats
+  label=cbind(as.character(nodes[,1]),matrix("-",nnodes),as.character(nodes[,2]),matrix("-",nnodes),as.character(nodes[,3]))
+  label=do.call("paste0",as.data.frame(label))
+  label=rbind(matrix("",dots),as.matrix(label))
+  
+  #elections
+  elect = matrix(NA,dots+nnodes)
+  if (norm(election)!=0) elect = rbind(elect, election)
+  
+  #attach node points                
+  x <-rbind(as.matrix(R[,1]),as.matrix(nodes[,1]/seats))
+  y <-rbind(as.matrix(R[,2]),as.matrix(nodes[,2]/seats))
+  z <-rbind(as.matrix(R[,3]),as.matrix(nodes[,3]/seats))
+  
+  el=0;
+  if (norm(votes) != 0){
+    
+    x <- c(x, votes[,1])
+    y <- c(y, votes[,2])
+    z <- c(z, votes[,3])
+    el=dim(votes)[1]
+    label = c(label,as.character(election))
+    
+  }
+  
+  
+  #assembling a data frame
+  df = data.frame(
+    
+    type          = c(matrix("dot",dots), matrix("node",nnodes), matrix("vote",el,1)),
+    
+    x ,
+    y ,
+    z ,
+    
+    code          = c(rgb(S/seats), matrix(NA,nnodes+el)),
+    
+    AllocOrderCode=  c(AllocOrderCode, matrix(NA,nnodes+el)),
+    AllocOrderCodeC= c(rgb(AllocOrderCode/(3^seats),0,0), matrix(NA,nnodes+el)),
+    
+    Euclid        = c(Euclid, matrix(NA,nnodes+el)),
+    codeEuclid    = c(rgb(nodes[Euclid[1:dots],]/seats), matrix(NA,nnodes+el)),
+    
+    Manhattan     = c(Manhattan, matrix(NA,nnodes+el)),
+    codeManhattan = c(rgb(nodes[Manhattan[1:dots],]/seats), matrix(NA,nnodes+el)),
+    
+    Uniform       = c(Uniform, matrix(NA,nnodes+el)),
+    codeUniform   = c(rgb(nodes[Uniform[1:dots],]/seats), matrix(NA,nnodes+el)),
+    
+    Allocated     = c(Allocated, matrix(NA,nnodes+el)),
+    Malapportionment = c((Allocated!=Euclid)[1:dots], matrix(NA,nnodes+el)),
+    
+    label,
+    
+    elect
+  )
+  
+  return(df);
+  
+}

@@ -79,9 +79,20 @@ AllocatedNode <- function (y, nodes, nnodes) {
   
 }
 
-AssembleData <- function (R, seats, step, threshold, vectorcode=as.matrix(3^(0:(seats-1))), votes=matrix(0,1), election=matrix(0,1)) {
+AssembleData <- function (dots, seats, step, threshold, vectorAllocCode = c((seats+1)^2,seats+1,1), vectorOrderCode=as.matrix(3^(0:(seats-1))), votes=matrix(0,1), election=matrix(0,1)) {
   
-  dots=dim(R)[1]
+  #dots=dim(R)[1]
+  
+  #Generate random electoral results
+  
+  #Ternary simulation. Projects points in[0,1]^3 to the sum(x)=1 hyperplane
+  #This creates way more points in the center than in the extremes
+  #R = matrix(runif(3*dots), nrow=dots, ncol=3)
+  #R = R/rowSums(R)
+  
+  #Map Cartesian to Ternary to produce a homegeneous simulation
+  Rc = matrix(runif(2*dots), nrow=dots, ncol=2)
+  R  = matrix(apply(Rc,1, CartesianToTernary), nrow=dots, ncol=3, byrow=TRUE)
   
   #nodes
   nodes  = generateNodes(seats)
@@ -89,8 +100,11 @@ AssembleData <- function (R, seats, step, threshold, vectorcode=as.matrix(3^(0:(
   
   #allocate seats
   S = matrix(apply(R, 1, function(x) alloc(letters[24:26], x, seats, step, threshold)[[1]]), nrow=dots, ncol=3, byrow=TRUE)
+  AllocCode   = matrix(S, ncol=3) %*% as.matrix(vectorAllocCode)
+  
   AllocOrder  = matrix(apply(R, 1, function(x) alloc(1:3, x, seats, step, threshold)[[2]]), nrow=dots, ncol=seats, byrow=TRUE)  
-  AllocOrderCode= (matrix(AllocOrder, ncol=seats)-1) %*% as.matrix(vectorcode)
+  AllocOrderCode= (matrix(AllocOrder, ncol=seats)-1) %*% as.matrix(vectorOrderCode)
+  
   
   #Indexes for Voronoi and Allocation regions
   Uniform   = apply(R, 1, UniformNearest,   nodes = nodes, nnodes=nnodes)
@@ -133,18 +147,20 @@ AssembleData <- function (R, seats, step, threshold, vectorcode=as.matrix(3^(0:(
     y ,
     z ,
     
-    code          = c(rgb(S/seats), matrix(NA,nnodes+el)),
+    AllocCode     =  c(AllocCode, matrix(NA,nnodes+el)),
+    #code          = c(rgb(S/seats), matrix(NA,nnodes+el)),
     
-    AllocOrderCode= c(rgb(AllocOrderCode/(3^seats),0,0), matrix(NA,nnodes+el)),
+    AllocOrderCode=  c(AllocOrderCode, matrix(NA,nnodes+el)),
+    #AllocOrderCodeC= c(rgb(AllocOrderCode/(3^seats),0,0), matrix(NA,nnodes+el)),
     
     Euclid        = c(Euclid, matrix(NA,nnodes+el)),
-    codeEuclid    = c(rgb(nodes[Euclid[1:dots],]/seats), matrix(NA,nnodes+el)),
+    #codeEuclid    = c(rgb(nodes[Euclid[1:dots],]/seats), matrix(NA,nnodes+el)),
     
     Manhattan     = c(Manhattan, matrix(NA,nnodes+el)),
-    codeManhattan = c(rgb(nodes[Manhattan[1:dots],]/seats), matrix(NA,nnodes+el)),
+    #codeManhattan = c(rgb(nodes[Manhattan[1:dots],]/seats), matrix(NA,nnodes+el)),
     
     Uniform       = c(Uniform, matrix(NA,nnodes+el)),
-    codeUniform   = c(rgb(nodes[Uniform[1:dots],]/seats), matrix(NA,nnodes+el)),
+    #codeUniform   = c(rgb(nodes[Uniform[1:dots],]/seats), matrix(NA,nnodes+el)),
     
     Allocated     = c(Allocated, matrix(NA,nnodes+el)),
     Malapportionment = c((Allocated!=Euclid)[1:dots], matrix(NA,nnodes+el)),
@@ -169,41 +185,37 @@ step=1; #(2 Sainte-Laguë 1 D'Hondt)
 dots=50000
 threshold=.05
 
-#Generate random electoral results
-
-#Ternary simulation. Projects points in[0,1]^3 to the sum(x)=1 hyperplane
-#This creates way more points in the center than in the extremes
-#R = matrix(runif(3*dots), nrow=dots, ncol=3)
-#R = R/rowSums(R)
-
-#Map Cartesian to Ternary to produce a homegeneous simulation
-Rc = matrix(runif(2*dots), nrow=dots, ncol=2)
-R  = matrix(apply(Rc,1, CartesianToTernary), nrow=dots, ncol=3, byrow=TRUE)
-
 #Assemble the data frame
-df = AssembleData(R, seats, step, threshold)
+df = AssembleData(dots, seats, step, threshold)
 
-#reverse coding for ordering regions
-#vectorcoderev = as.matrix(rev(3^(0:(seats-1))))
-#df = AssembleData(R, seats, step, threshold, vectorcoderev)
+#alternative encodings for Alloc and AllocOrder:
+#default encoding:
+#vectorAllocCode = c((seats+1)^2,seats+1,1)
+#vectorOrderCoder = as.matrix(3^(0:(seats-1)))
+#reverse coding for allocation
+#vectorAllocCoderev = c(1,seats+1,(seats+1)^2)
+#reverse encoding for ordering regions
+#vectorOrderCoderev = as.matrix(rev(3^(0:(seats-1))))
+#df = AssembleData(dots, seats, step, threshold, vectorAllocCode=vectorAllocCoderev)
+#df = AssembleData(dots, seats, step, threshold, vectorOrderCode=vectorOrderCoderev)
 
 #Allocation
-ggtern(data=df,aes(x,y,z,color=code,alpha=0.8)) +
+ggtern(data=df,aes(x,y,z,color=as.factor(AllocCode),alpha=0.8)) +
   theme_rgbw() +
   geom_point() +
   geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
   labs(x="X",y="Y",z="Z",title="Allocation")+
   scale_colour_grey(start = 0.4, end = 1, na.value = "black")
-
+  
 #Voronoi
-ggtern(data=df,aes(x,y,z,color=codeManhattan, alpha=0.8)) +
+ggtern(data=df,aes(x,y,z,color=as.factor(Manhattan), alpha=0.8)) +
   theme_rgbw() +
   geom_point() +
   geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
   labs(x="X",y="Y",z="Z",title="Voronoi")+
   scale_colour_grey(start = 0.4, end = 1, na.value = "black")
 
-#equivalence between Voronoi regions w/ different distances and between those and electoral regions
+#equivalence between Voronoi regions using different distances and between those and electoral regions
 sum(df$Euclid[1:dots]==df$Manhattan[1:dots])/dots
 sum(df$Uniform[1:dots]==df$Manhattan[1:dots])/dots
 sum(df$Uniform[1:dots]==df$Euclid[1:dots])/dots
@@ -222,7 +234,7 @@ ggtern(data=df,aes(x,y,z,color=!Malapportionment, alpha=0.8)) +
   scale_colour_grey(na.value = "black")
 
 #ordering subregions
-ggtern(data=df,aes(x,y,z,color=AllocOrderCode,alpha=0.8)) +
+ggtern(data=df,aes(x,y,z,color=as.factor(AllocOrderCode),alpha=0.8)) +
   theme_rgbw() +
   geom_point() +
   labs(x="X",y="Y",z="Z",title="Allocation ordering regions")+
@@ -237,12 +249,12 @@ votes=matrix(runif(nelect*3),nelect,3)
 votes <- votes/rowSums(votes)
 election=as.matrix(seq(from=1979, to=2015, by=4))
 
-dfvotes = AssembleData(R, seats, step, threshold, votes=votes, election=election)
+dfvotes = AssembleData(dots, seats, step, threshold, votes=votes, election=election)
 
 #df2 = df[(dots+nnodes+1):(dots+nnodes+dim(election)),]
 
 
-ggtern(data=dfvotes,aes(x,y,z,color=code,alpha=0.8)) +
+ggtern(data=dfvotes,aes(x,y,z,color=as.factor(AllocCode),alpha=0.8)) +
   theme_rgbw() +
   geom_point() +
   geom_text(aes(label=label), color="red", hjust=0.5,vjust=-0.6, size=3)+
@@ -252,7 +264,7 @@ ggtern(data=dfvotes,aes(x,y,z,color=code,alpha=0.8)) +
 
 
 
-
+#install.packages("nnet")
 library('nnet')
 fit <- multinom(Allocated ~ x + y + z, data = df)
 
@@ -263,4 +275,4 @@ print(fit)
 fit$coefs
 fit$terms
 fit$fitted
-fit$decision.values
+

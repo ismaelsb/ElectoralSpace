@@ -5,6 +5,4 @@ El código utilizado para estos cálculos y representaciones se encuentra en est
 
 En el código se incluyen la función de asignación electoral y la asignación con umbral de entrada y se muestran los efectos del umbral electoral sobre las regiones de asignación en un diagrama. Se añade además la representación de datos históricos o geográficos de varias elecciones sobre el diagrama. Se estudia la asignación no sólo en resultado, sino también en el orden de reparto de los escaños, y se dibujan diagramas que muestran las regiones del Espacio Electoral divididas en subregiones para cada posible ordenación de la asignación. Uno de los diagramas de las subregiones visibiliza de manera bastante destacable la geometría de las regiones electorales.
 
-Del borrador https://github.com/ismaelsb/ElectoralSpace/blob/master/Draft.R se han sustituido los bucles por nuevas funciones y cáculos vectorizados para ganar eficiencia.
-
-Se puede ver una muestra de los resultados en https://dl.dropboxusercontent.com/u/1570957/ElectoralSpace1.html
+Se puede ver una muestra de los resultados en https://dl.dropboxusercontent.com/u/1570957/ElectoralSpace.html

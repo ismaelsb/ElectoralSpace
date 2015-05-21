@@ -13,6 +13,7 @@ output: html_document
 #install.packages("ggtern")
 #Load the ggtern library:
 library(ggtern)
+#library(stats)
 
 ```
 

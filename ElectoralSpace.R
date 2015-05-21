@@ -4,23 +4,33 @@ install.packages("ggtern")
 library(ggtern)
 #library(stats)
 
-#defining a function for the seat allocation and its ordering
-alloc <- function(parties, votes, seats, step, threshold){ 
+alloc <- function(parties, votes, seats, step, threshold, partial=TRUE){
+  
+  #function for the seat allocation and its ordering
   votes=votes*(votes>=(threshold*sum(votes)))
   quotienstable <- data.frame( 
     parties    = rep(parties, each = seats), 
     quotients  = as.vector(sapply(votes, function(x) 
-                                  x/seq(from=1, to=1+step*(seats-1), by=step) )),
+      x/seq(from=1, to=1+step*(seats-1), by=step) )),
     votesrep   = rep(votes, each = seats)
   ) 
   quotienstable <- quotienstable$parties[order(-quotienstable$quotients, -quotienstable$votesrep)] [1:seats] 
-    
-  list(table(quotienstable), as.matrix(quotienstable))
+  
+  A=list()
+  #-----------------------------------------------
+  #partial=TRUE (default partial=seats if don't want to compute the partial sums)
+  for (i in partial:seats){
+    A[[i]]= table(quotienstable[1:i]) #all seats allocated for i=seats 
+  }
+  #-----------------------------------------------
+  A[[seats+1]]= as.matrix(quotienstable) #ordering
+  
+  return(A);
 }
 
-#define nodes
 generateNodes <- function(seats){ 
-
+  
+  #define nodes
   nnodes = (seats+1)*(seats+2)/2;
   nodes  = matrix(0,nnodes,3);
   t=1;
@@ -35,7 +45,7 @@ generateNodes <- function(seats){
 }
 
 generateDots <- function(dots, method="cartesian"){
-
+  
   if (method == "cartesian") {
     #Map Cartesian to Ternary to produce a homegeneous simulation
     Rc = matrix(runif(2*dots), nrow=dots, ncol=2)
@@ -50,7 +60,7 @@ generateDots <- function(dots, method="cartesian"){
   }
   
   return(R);
-
+  
 }
 
 CartesianToTernary <- function (x) {
@@ -99,9 +109,9 @@ AllocatedNode <- function (y, nodes, nnodes) {
   
 }
 
-#generates a spline curve through elections history
 generateSpline <- function (dfvotes, dots, seats, nelect, method="natural") {
   
+  #generates a spline curve through elections history
   nnodes = (seats+1)*(seats+2)/2;
   
   splineX <- spline(x=1:nelect,y=dfvotes[(dots+nnodes+1):(dots+nnodes+nelect),]$x, method=method)
@@ -118,7 +128,7 @@ generateSpline <- function (dfvotes, dots, seats, nelect, method="natural") {
   
 }
 
-AssembleData <- function (dots, seats, step, threshold, vectorAllocCode = c((seats+1)^2,seats+1,1), vectorOrderCode=as.matrix(3^(0:(seats-1))), votes=matrix(0,1), election=matrix(0,1)) {
+AssembleData <- function (dots, seats, step, threshold, vectorAllocCode = c((seats+1)^2,seats+1,1), vectorOrderCode=as.matrix(3^(0:(seats-1))), votes=matrix(0,1), election=matrix(0,1), partial=seats) {
   
   #Generate random electoral results
   R <- generateDots(dots)
@@ -128,13 +138,20 @@ AssembleData <- function (dots, seats, step, threshold, vectorAllocCode = c((sea
   nnodes = (seats+1)*(seats+2)/2;
   
   #allocate seats
-  AllocStructure <- apply(R, 1, function(x) alloc(as.character(1:3), x, seats, step, threshold))
-    
-    #allocation
-  S = t(matrix(sapply(AllocStructure, function(x) x[[1]]),nrow=3,ncol=dots))
-  AllocCode = matrix(S, ncol=3) %*% as.matrix(vectorAllocCode)
-    #allocation order
-  AllocOrder = t(matrix(sapply(AllocStructure, function(x) as.integer(x[[2]])),nrow=seats,ncol=dots))
+  AllocStructure <- apply(R, 1, function(x) alloc(as.character(1:3), x, seats, step, threshold, partial=partial))
+  
+  #allocation
+  AllocPartial=matrix(0,dots,seats)
+  #input partial=1 to compute partial sums or partial=seats to compute only seats
+  for (i in partial:seats){
+    S = t(matrix(sapply(AllocStructure, function(x) x[[i]]),nrow=3,ncol=dots))
+    vectorAllocCode = c((i+1)^2,i+1,1)
+    AllocPartial[,i] = matrix(S, ncol=3) %*% as.matrix(vectorAllocCode)
+  }
+  AllocCode=AllocPartial[,seats]
+  
+  #allocation order
+  AllocOrder = t(matrix(sapply(AllocStructure, function(x) as.integer(x[[seats+1]])),nrow=seats,ncol=dots))
   AllocOrderCode = (matrix(AllocOrder, ncol=seats)-1) %*% as.matrix(vectorOrderCode)
   
   #Indexes for Voronoi and Allocation regions
@@ -167,6 +184,9 @@ AssembleData <- function (dots, seats, step, threshold, vectorAllocCode = c((sea
     label = c(label,as.character(election))
     
   }
+  
+  AllocPartial=rbind(AllocPartial,matrix(NA,nnodes+el,seats))
+  dfPartial=as.data.frame(AllocPartial)
   
   
   #assembling a data frame
@@ -201,6 +221,8 @@ AssembleData <- function (dots, seats, step, threshold, vectorAllocCode = c((sea
     elect
   )
   
+  df=cbind(df,dfPartial)
+  
   return(df);
   
 }
@@ -208,7 +230,7 @@ AssembleData <- function (dots, seats, step, threshold, vectorAllocCode = c((sea
 #Allocation example (step=2 Sainte-Laguë; step=1 D'Hondt)
 votes <- sample(1:1000, 3) 
 votes
-alloc(letters[1:3], votes, 10, 1, .05) 
+alloc(letters[1:3], votes, 10, 1, .05)[10:11] #print all seats and allocation
 
 #presets
 seats=5;
@@ -217,10 +239,10 @@ dots=50000
 threshold=.05
 
 #Assemble the data frame
-df = AssembleData(dots, seats, step, threshold)
+#df = AssembleData(dots, seats, step, threshold)
+df = AssembleData(dots, seats, step, threshold, partial=TRUE)
 
-#df1 =AssembleData(50000,5,1,0)
-#df2 =AssembleData(50000,5,2,0)
+df2 =AssembleData(dots, seats, step=2,threshold, partial=2)
 
 #alternative encodings for Alloc and AllocOrder:
 #default encoding:
@@ -238,34 +260,58 @@ ggtern(data=df,aes(x,y,z,color=as.factor(AllocCode))) +
   theme_rgbw() +
   geom_point(alpha=0.8) +
   geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
-  labs(x="X",y="Y",z="Z",title="Allocation")+
+  labs(x="X",y="Y",z="Z",title="D'Hondt Allocation")+
   scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
-  
+
+ggtern(data=df2,aes(x,y,z,color=as.factor(AllocCode))) +
+  theme_rgbw() +
+  geom_point(alpha=0.8) +
+  geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
+  labs(x="X",y="Y",z="Z",title="Sainte-Laguë Allocation")+
+  scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+
 #Voronoi
 ggtern(data=df,aes(x,y,z,color=as.factor(Manhattan))) +
   theme_rgbw() +
   geom_point(alpha=0.8) +
   geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
-  labs(x="X",y="Y",z="Z",title="Voronoi")+
+  labs(x="X",y="Y",z="Z",title="Voronoi Allocation")+
   scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
 
 #equivalence between Voronoi regions using different distances and between those and electoral regions
 sum(df$Euclid[1:dots]==df$Manhattan[1:dots])/dots
 sum(df$Uniform[1:dots]==df$Manhattan[1:dots])/dots
 sum(df$Uniform[1:dots]==df$Euclid[1:dots])/dots
-#points allocated in their corresponding Voronoi region
+
+#points allocated by D'Hondt in their corresponding Voronoi region
 sum(df$Malapportionment[1:dots])/dots
+#points allocated by Sainte-Laguë in their corresponding Voronoi region
+sum(df2$Malapportionment[1:dots])/dots
+
 #size of the regions # 1 ~= dots/nnodes
 nnodes=(seats+1)*(seats+2)/2;
 RegionSize = table(df$Allocated[1:dots])/(dots/nnodes)
-plot(RegionSize)
+RegionSize2 = table(df2$Allocated[1:dots])/(dots/nnodes)
+
+par(mfrow=c(2,1))
+plot(RegionSize, main="D'Hondt region sizes")
+plot(RegionSize2,main="Sainte-Laguë region sizes" )
+par(mfrow=c(1,1))
 
 #malapportionment
-ggtern(data=df,aes(x,y,z,color=!Malapportionment)) +
+m1 <- ggtern(data=df,aes(x,y,z,color=!Malapportionment)) +
   theme_rgbw() +
   geom_point(alpha=0.8) +
-  labs(x="X",y="Y",z="Z",title="Malapportionment")+
+  labs(x="X",y="Y",z="Z",title="D'Hondt Malapportionment")+
   scale_colour_grey(na.value = "black", guide = FALSE)
+
+m2 <- ggtern(data=df2,aes(x,y,z,color=!Malapportionment)) +
+  theme_rgbw() +
+  geom_point(alpha=0.8) +
+  labs(x="X",y="Y",z="Z",title="Sainte-Laguë Malapportionment")+
+  scale_colour_grey(na.value = "black", guide = FALSE)
+
+ggtern.multi(m1, m2, cols=2)
 
 #ordering subregions
 ggtern(data=df,aes(x,y,z,color=as.factor(AllocOrderCode))) +
@@ -274,6 +320,52 @@ ggtern(data=df,aes(x,y,z,color=as.factor(AllocOrderCode))) +
   labs(x="X",y="Y",z="Z",title="Allocation ordering regions")+
   scale_colour_grey(start = 0.1, end = 1, na.value = "black", guide = FALSE)
 
+#Partial Allocations
+
+p1 <-  ggtern(data=df[1:dots,],aes(x,y,z,color=as.factor(df[1:dots,13+2]))) +
+  theme_rgbw() +
+  geom_point(alpha=0.8) +
+  geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
+  labs(x="X",y="Y",z="Z",title="D'Hondt, 2 seats")+
+  scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+
+p2 <-  ggtern(data=df[1:dots,],aes(x,y,z,color=as.factor(df[1:dots,13+3]))) +
+  theme_rgbw() +
+  geom_point(alpha=0.8) +
+  geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
+  labs(x="X",y="Y",z="Z",title="D'Hondt, 3 seats")+
+  scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+
+p3 <-  ggtern(data=df[1:dots,],aes(x,y,z,color=as.factor(df[1:dots,13+4]))) +
+  theme_rgbw() +
+  geom_point(alpha=0.8) +
+  geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
+  labs(x="X",y="Y",z="Z",title="D'Hondt, 3 seats")+
+  scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+
+p4 <-  ggtern(data=df[1:dots,],aes(x,y,z,color=as.factor(df[1:dots,13+2]))) +
+  theme_rgbw() +
+  geom_point(alpha=0.8) +
+  geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
+  labs(x="X",y="Y",z="Z",title="Sainte-Laguë, 2 seats")+
+  scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+
+p5 <-  ggtern(data=df[1:dots,],aes(x,y,z,color=as.factor(df[1:dots,13+3]))) +
+  theme_rgbw() +
+  geom_point(alpha=0.8) +
+  geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
+  labs(x="X",y="Y",z="Z",title="Sainte-Laguë, 3 seats")+
+  scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+
+p6 <-  ggtern(data=df[1:dots,],aes(x,y,z,color=as.factor(df[1:dots,13+4]))) +
+  theme_rgbw() +
+  geom_point(alpha=0.8) +
+  geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
+  labs(x="X",y="Y",z="Z",title="Sainte-Laguë, 4 seats")+
+  scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+
+plist=list(p1,p4,p2,p5,p3,p6)
+ggtern.multi(plotlist=plist, cols=3)
 
 #history of election results
 #example
@@ -284,7 +376,7 @@ votes <- votes/rowSums(votes)
 election=as.matrix(seq(from=1979, to=2015, by=4))
 
 #example
-seats=5; step=1;
+seats=7; step=1;
 nelect=10;
 votes=matrix(0,nelect,3)
 votes[,1]=c(350,430,290,400,390,450,470,360,280,230)
@@ -304,8 +396,6 @@ ggtern(data=dfvotes,aes(x,y,z,color=as.factor(AllocCode))) +
   labs(x="SocLib",y="SocCom",z="LibCon",title="Past Elections")+
   scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
 
-
-
 #install.packages("nnet")
 library('nnet')
 fit <- multinom(Allocated ~ x + y + z, data = df)
@@ -317,7 +407,5 @@ print(fit)
 fit$coefs
 fit$terms
 fit$fitted
-
-
 
 

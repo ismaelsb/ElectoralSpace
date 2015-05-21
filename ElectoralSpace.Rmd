@@ -24,10 +24,10 @@ library(ggtern)
 alloc <- function(parties, votes, seats, step, threshold){ 
   votes=votes*(votes>=(threshold*sum(votes)))
   quotienstable <- data.frame( 
-    parties = rep(parties, each = seats), 
-    quotients  = as.vector(sapply(votes, function(x) x / 
-                                    seq(from=1, to=1+step*(seats-1), by=step) )),
-    votesrep = rep(votes, each = seats)
+    parties    = rep(parties, each = seats), 
+    quotients  = as.vector(sapply(votes, function(x) 
+                                  x/seq(from=1, to=1+step*(seats-1), by=step) )),
+    votesrep   = rep(votes, each = seats)
   ) 
   quotienstable <- quotienstable$parties[order(-quotienstable$quotients, -quotienstable$votesrep)] [1:seats] 
     
@@ -37,8 +37,8 @@ alloc <- function(parties, votes, seats, step, threshold){
 #define nodes
 generateNodes <- function(seats){ 
 
-  nnodes=(seats+1)*(seats+2)/2;
-  nodes= matrix(0,nnodes,3);
+  nnodes = (seats+1)*(seats+2)/2;
+  nodes  = matrix(0,nnodes,3);
   t=1;
   for (i in 0:seats){
     for (j in i:seats){
@@ -48,6 +48,25 @@ generateNodes <- function(seats){
   }   
   return(nodes);
   
+}
+
+generateDots <- function(dots, method="cartesian"){
+
+  if (method == "cartesian") {
+    #Map Cartesian to Ternary to produce a homegeneous simulation
+    Rc = matrix(runif(2*dots), nrow=dots, ncol=2)
+    R  = matrix(apply(Rc,1, CartesianToTernary), nrow=dots, ncol=3, byrow=TRUE)
+  }
+  
+  else if (method == "ternary") {
+    #Ternary simulation. Projects points in[0,1]^3 to the sum(x)=1 hyperplane
+    #This creates way more points in the center than in the extremes
+    R = matrix(runif(3*dots), nrow=dots, ncol=3)
+    R = R/rowSums(R)
+  }
+  
+  return(R);
+
 }
 
 CartesianToTernary <- function (x) {
@@ -102,32 +121,25 @@ AllocatedNode <- function (y, nodes, nnodes) {
 
 ```{r, echo=TRUE}
 
+
 AssembleData <- function (dots, seats, step, threshold, vectorAllocCode = c((seats+1)^2,seats+1,1), vectorOrderCode=as.matrix(3^(0:(seats-1))), votes=matrix(0,1), election=matrix(0,1)) {
   
-  #dots=dim(R)[1]
-  
   #Generate random electoral results
-  
-  #Ternary simulation. Projects points in[0,1]^3 to the sum(x)=1 hyperplane
-  #This creates way more points in the center than in the extremes
-  #R = matrix(runif(3*dots), nrow=dots, ncol=3)
-  #R = R/rowSums(R)
-  
-  #Map Cartesian to Ternary to produce a homegeneous simulation
-  Rc = matrix(runif(2*dots), nrow=dots, ncol=2)
-  R  = matrix(apply(Rc,1, CartesianToTernary), nrow=dots, ncol=3, byrow=TRUE)
+  R <- generateDots(dots)
   
   #nodes
   nodes  = generateNodes(seats)
   nnodes = (seats+1)*(seats+2)/2;
   
   #allocate seats
-  S = matrix(apply(R, 1, function(x) alloc(letters[24:26], x, seats, step, threshold)[[1]]), nrow=dots, ncol=3, byrow=TRUE)
-  AllocCode   = matrix(S, ncol=3) %*% as.matrix(vectorAllocCode)
-  
-  AllocOrder  = matrix(apply(R, 1, function(x) alloc(1:3, x, seats, step, threshold)[[2]]), nrow=dots, ncol=seats, byrow=TRUE)  
-  AllocOrderCode= (matrix(AllocOrder, ncol=seats)-1) %*% as.matrix(vectorOrderCode)
-  
+  AllocStructure <- apply(R, 1, function(x) alloc(as.character(1:3), x, seats, step, threshold))
+    
+    #allocation
+  S = t(matrix(sapply(AllocStructure, function(x) x[[1]]),nrow=3,ncol=dots))
+  AllocCode = matrix(S, ncol=3) %*% as.matrix(vectorAllocCode)
+    #allocation order
+  AllocOrder = t(matrix(sapply(AllocStructure, function(x) as.integer(x[[2]])),nrow=seats,ncol=dots))
+  AllocOrderCode = (matrix(AllocOrder, ncol=seats)-1) %*% as.matrix(vectorOrderCode)
   
   #Indexes for Voronoi and Allocation regions
   Uniform   = apply(R, 1, UniformNearest,   nodes = nodes, nnodes=nnodes)

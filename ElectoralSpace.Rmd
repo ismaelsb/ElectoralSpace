@@ -23,7 +23,7 @@ library(ggtern)
 
 ```{r, echo=TRUE}
 
-alloc <- function(parties, votes, seats, step, threshold, partial=TRUE){
+alloc <- function(parties, votes, seats, step, threshold, partial=seats){
   
   #function for the seat allocation and its ordering
   votes=votes*(votes>=(threshold*sum(votes)))
@@ -35,16 +35,18 @@ alloc <- function(parties, votes, seats, step, threshold, partial=TRUE){
   ) 
   quotienstable <- quotienstable$parties[order(-quotienstable$quotients, -quotienstable$votesrep)] [1:seats] 
   
-  A=list()
-  #-----------------------------------------------
+  SeatsList=list()
+  
   #partial=TRUE (default partial=seats if don't want to compute the partial sums)
   for (i in partial:seats){
-    A[[i]]= table(quotienstable[1:i]) #all seats allocated for i=seats 
+    SeatsList[[i]]= table(quotienstable[1:i]) #all seats allocated for i=seats 
   }
-  #-----------------------------------------------
-  A[[seats+1]]= as.matrix(quotienstable) #ordering
   
-  return(A);
+  SeatsList[[seats+1]] = as.matrix(quotienstable) #ordering
+  
+  SeatsList = SeatsList[partial: (seats+1)]
+  
+  return(SeatsList);
 }
 
 generateNodes <- function(seats){ 
@@ -164,19 +166,21 @@ AssembleData <- function (dots, seats, step, threshold, vectorAllocCode = c((sea
   
   #allocate seats
   AllocStructure <- apply(R, 1, function(x) alloc(as.character(1:3), x, seats, step, threshold, partial=partial))
-    
-    #allocation
-  AllocPartial=matrix(0,dots,seats)
   #input partial=1 to compute partial sums or partial=seats to compute only seats
-  for (i in partial:seats){
-    S = t(matrix(sapply(AllocStructure, function(x) x[[i]]),nrow=3,ncol=dots))
-    vectorAllocCode = c((i+1)^2,i+1,1)
-    AllocPartial[,i] = matrix(S, ncol=3) %*% as.matrix(vectorAllocCode)
-  }
-  AllocCode=AllocPartial[,seats]
   
-    #allocation order
-  AllocOrder = t(matrix(sapply(AllocStructure, function(x) as.integer(x[[seats+1]])),nrow=seats,ncol=dots))
+  #allocation
+  AllocPartial=matrix(0,dots,seats-partial+1)
+  
+  for (i in partial:seats){
+    S = t(matrix(sapply(AllocStructure, function(x) x[[i-partial+1]]),nrow=3,ncol=dots))
+    vectorAllocCode = c((i+1)^2,i+1,1)
+    AllocPartial[,i-partial+1] = matrix(S, ncol=3) %*% as.matrix(vectorAllocCode)
+  }
+  
+  AllocCode=AllocPartial[,seats-partial+1]
+  
+  #allocation order
+  AllocOrder = t(matrix(sapply(AllocStructure, function(x) as.integer(x[[seats-partial+2]])),nrow=seats,ncol=dots))
   AllocOrderCode = (matrix(AllocOrder, ncol=seats)-1) %*% as.matrix(vectorOrderCode)
   
   #Indexes for Voronoi and Allocation regions
@@ -210,7 +214,7 @@ AssembleData <- function (dots, seats, step, threshold, vectorAllocCode = c((sea
     
   }
   
-  AllocPartial=rbind(AllocPartial,matrix(NA,nnodes+el,seats))
+  AllocPartial=rbind(AllocPartial,matrix(NA,nnodes+el,seats-partial+1))
   dfPartial=as.data.frame(AllocPartial)
   
   
@@ -260,7 +264,7 @@ AssembleData <- function (dots, seats, step, threshold, vectorAllocCode = c((sea
 #Allocation example (step=2 Sainte-Laguë; step=1 D'Hondt)
 votes <- sample(1:1000, 3) 
 votes
-alloc(letters[1:3], votes, 10, 1, .05)[10:11] #print all seats and allocation
+alloc(letters[1:3], votes, 10, 1, .05) #print seats sum and allocation
 
 ```
 
@@ -375,51 +379,49 @@ ggtern(data=df,aes(x,y,z,color=as.factor(AllocOrderCode))) +
 
 ```{r, echo=TRUE}
 
-  #Partial Allocations
- 
-  p1 <-  ggtern(data=df[1:dots,],aes(x,y,z,color=as.factor(df[1:dots,13+2]))) +
-    theme_rgbw() +
-    geom_point(alpha=0.8) +
-    geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
-    labs(x="X",y="Y",z="Z",title="D'Hondt, 2 seats")+
-    scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+#Partial Allocations
 
- p2 <-  ggtern(data=df[1:dots,],aes(x,y,z,color=as.factor(df[1:dots,13+3]))) +
-    theme_rgbw() +
-    geom_point(alpha=0.8) +
-    geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
-    labs(x="X",y="Y",z="Z",title="D'Hondt, 3 seats")+
-    scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+p1 <-  ggtern(data=df[1:dots,],aes(x,y,z,color=as.factor(df[1:dots,13+2]))) +
+  theme_rgbw() +
+  geom_point(alpha=0.8) +
+  geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
+  labs(x="X",y="Y",z="Z",title="D'Hondt, 2 seats")+
+  scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
 
- p3 <-  ggtern(data=df[1:dots,],aes(x,y,z,color=as.factor(df[1:dots,13+4]))) +
-    theme_rgbw() +
-    geom_point(alpha=0.8) +
-    geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
-    labs(x="X",y="Y",z="Z",title="D'Hondt, 3 seats")+
-    scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+p2 <-  ggtern(data=df[1:dots,],aes(x,y,z,color=as.factor(df[1:dots,13+3]))) +
+  theme_rgbw() +
+  geom_point(alpha=0.8) +
+  geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
+  labs(x="X",y="Y",z="Z",title="D'Hondt, 3 seats")+
+  scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
 
- p4 <-  ggtern(data=df[1:dots,],aes(x,y,z,color=as.factor(df[1:dots,13+2]))) +
-    theme_rgbw() +
-    geom_point(alpha=0.8) +
-    geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
-    labs(x="X",y="Y",z="Z",title="Sainte-Laguë, 2 seats")+
-    scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+p3 <-  ggtern(data=df[1:dots,],aes(x,y,z,color=as.factor(df[1:dots,13+4]))) +
+  theme_rgbw() +
+  geom_point(alpha=0.8) +
+  geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
+  labs(x="X",y="Y",z="Z",title="D'Hondt, 3 seats")+
+  scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
 
- p5 <-  ggtern(data=df[1:dots,],aes(x,y,z,color=as.factor(df[1:dots,13+3]))) +
-    theme_rgbw() +
-    geom_point(alpha=0.8) +
-    geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
-    labs(x="X",y="Y",z="Z",title="Sainte-Laguë, 3 seats")+
-    scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+p4 <-  ggtern(data=df2[1:dots,],aes(x,y,z,color=as.factor(df2[1:dots,13+1]))) +
+  theme_rgbw() +
+  geom_point(alpha=0.8) +
+  geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
+  labs(x="X",y="Y",z="Z",title="Sainte-Laguë, 2 seats")+
+  scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
 
- p6 <-  ggtern(data=df[1:dots,],aes(x,y,z,color=as.factor(df[1:dots,13+4]))) +
-    theme_rgbw() +
-    geom_point(alpha=0.8) +
-    geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
-    labs(x="X",y="Y",z="Z",title="Sainte-Laguë, 4 seats")+
-    scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
-    
+p5 <-  ggtern(data=df2[1:dots,],aes(x,y,z,color=as.factor(df2[1:dots,13+2]))) +
+  theme_rgbw() +
+  geom_point(alpha=0.8) +
+  geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
+  labs(x="X",y="Y",z="Z",title="Sainte-Laguë, 3 seats")+
+  scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
 
+p6 <-  ggtern(data=df2[1:dots,],aes(x,y,z,color=as.factor(df2[1:dots,13+3]))) +
+  theme_rgbw() +
+  geom_point(alpha=0.8) +
+  geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
+  labs(x="X",y="Y",z="Z",title="Sainte-Laguë, 4 seats")+
+  scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
 
 plist=list(p1,p4,p2,p5,p3,p6)
 ggtern.multi(plotlist=plist, cols=3)

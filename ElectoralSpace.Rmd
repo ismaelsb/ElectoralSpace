@@ -8,6 +8,11 @@ output:
 <https://github.com/ismaelsb/ElectoralSpace>
  
 
+**Introducción**
+
+Un diagrama ternario se utiliza para representar 3 variables en 2 dimensiones de forma única para cada conjunto de valores proporcionales. Se puede entender el diagrama como la proyección de los puntos del cuadrante positivo del espacio en
+el hiperplano cuya suma de coordenadas es 1. La imagen de la proyección es un triángulo equilátero. De la misma manera podemos representar 2 valores en un segmento o 4 valores en un tetraedro.
+
 **Libraries**
 
 ```{r, echo=TRUE}
@@ -16,6 +21,9 @@ output:
 #Load the ggtern library:
 library(ggtern)
 #library(stats)
+
+#plot example
+ggtern(data=data.frame(x=0.2,y=0.3,z=0.5),aes(x,y,z))+geom_point()
 
 ```
 
@@ -336,9 +344,9 @@ sum(df$Euclid[1:dots]==df$Manhattan[1:dots])/dots
 sum(df$Uniform[1:dots]==df$Manhattan[1:dots])/dots
 sum(df$Uniform[1:dots]==df$Euclid[1:dots])/dots
 
-#points allocated by D'Hondt in their corresponding Voronoi region
+#points not allocated by D'Hondt in their corresponding Voronoi region
 sum(df$Malapportionment[1:dots])/dots
-#points allocated by Sainte-Laguë in their corresponding Voronoi region
+#points not allocated by Sainte-Laguë in their corresponding Voronoi region
 sum(df2$Malapportionment[1:dots])/dots
 
 #size of the regions # 1 ~= dots/nnodes
@@ -399,7 +407,7 @@ p3 <-  ggtern(data=df[1:dots,],aes(x,y,z,color=as.factor(df[1:dots,13+4]))) +
   theme_rgbw() +
   geom_point(alpha=0.8) +
   geom_text(aes(label=label),hjust=0.5,vjust=-0.6, size=3)+
-  labs(x="X",y="Y",z="Z",title="D'Hondt, 3 seats")+
+  labs(x="X",y="Y",z="Z",title="D'Hondt, 4 seats")+
   scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
 
 p4 <-  ggtern(data=df2[1:dots,],aes(x,y,z,color=as.factor(df2[1:dots,13+1]))) +

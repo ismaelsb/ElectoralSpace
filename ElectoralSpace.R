@@ -443,7 +443,7 @@ ggtern(data=dfvotes,aes(x,y,z,color=as.factor(Allocated)))+ #CodeRGB also works
   #geom_path(data=dfvotes[(dots+nnodes+1):(dots+nnodes+nelect),],colour="brown3", linetype=1, size=0.7)+ 
   labs(x="SocLib",y="SocCom",z="LibCon",title="Past Elections")+
   #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
-  scale_colour_manual(values=generateColors(colorRGB1,seats), guide=FALSE, na.value="khaki2")
+  scale_colour_manual(values=generateColors(colorRGB0,seats), guide=FALSE, na.value="khaki2")
 
 
 #other colour palettes

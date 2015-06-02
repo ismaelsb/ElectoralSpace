@@ -31,7 +31,7 @@ ggtern(data=data.frame(x=0.2,y=0.3,z=0.5),aes(x,y,z))+geom_point()
 
 Un diagrama como éste se puede usar para representar el resultado de unas elecciones en las que los votos se reparten entre 3 partidos. Cada punto del triángulo se representa con tres coordenadas que se corresponden con el porcentaje de voto obtenido por cada partido. Tenemos un número de escaños a repartir y cada posible reparto se representa con un punto resaltado (nodo) en el triángulo con su correspondiente resultado. El método electoral asignará a cada resultado electoral uno de los posibles repartos de escaños. Las regiones de puntos a las que le son asignados un mismo reparto están representadas con un mismo color. Para dos partidos usaríamos un segmento y para cuatro, un tetraedro. El diagrama es útil para visualizar los posibles escaños en juego cuando el resultado está muy ajustado y próximo a la frontera entre dos o más regiones.
 
-Utilizamos una función de asignación electoral para distintos métodos proporcionales de cocientes con la posibilidad de añadir un umbral de entrada. Se pueden muestrar los efectos del umbral electoral sobre las regiones de asignación en un diagrama.
+Utilizamos una función de asignación electoral para distintos métodos proporcionales de cocientes con la posibilidad de añadir un umbral de entrada. Se pueden mostrar los efectos del umbral electoral sobre las regiones de asignación en un diagrama.
 
 ```{r, echo=TRUE}
 
@@ -168,7 +168,7 @@ generateColors <- function (colorRGB, seats) {
   #decimal codes for colors in nodes
   CodeDecRGB = floor(nodes*255.9/seats) #255.9 avoids seats -> 256 -> HEX #100 case
   #linear transformation to fixed extreme colors
-  Code3 = floor(CodeDecRGB%*%matrix(colorRGB,3,3)/256)
+  Code3 = floor(CodeDecRGB%*%matrix(colorRGB,3,3, byrow=T)/256)
   #hex codes for colors in nodes
   CodeRGB=cbind(matrix("#",nnodes),format(as.hexmode(Code3[,1]),width=2),format(as.hexmode(Code3[,2]),width=2),format(as.hexmode(Code3[,3]),width=2))
   CodeRGB=do.call("paste0",as.data.frame(CodeRGB))
@@ -183,8 +183,8 @@ generateColors <- function (colorRGB, seats) {
 **Matriz de datos**
 
 ```{r, echo=TRUE}
-
-AssembleData <- function (dots, seats, step, threshold, vectorAllocCode = c((seats+1)^2,seats+1,1), vectorOrderCode=as.matrix(3^(0:(seats-1))), votes=matrix(0,1), election=matrix(0,1), partial=seats) {
+ 
+AssembleData <- function (dots, seats, step, threshold, vectorOrderCode=as.matrix(3^(0:(seats-1))), votes=matrix(0,1), election=matrix(0,1), partial=seats) {
   
   #Generate random electoral results
   R <- generateDots(dots)
@@ -198,24 +198,15 @@ AssembleData <- function (dots, seats, step, threshold, vectorAllocCode = c((sea
   #input partial=1 to compute partial sums or partial=seats to compute only seats
   
   #allocation
-  AllocPartial=matrix("",dots,seats-partial+1)
+  AllocPartial=matrix(0,dots,seats-partial+1)
   
   for (i in partial:seats){
     
     S = t(matrix(sapply(AllocStructure, function(x) x[[i-partial+1]]),nrow=3,ncol=dots))
-    Code3 = floor(S*255.9/i) #255.9 avoids i (total seats) -> 256 -> HEX #100 case
-    CodeRGB = cbind(matrix("#",dots),format(as.hexmode(Code3[,1]),width=2),format(as.hexmode(Code3[,2]),width=2),format(as.hexmode(Code3[,3]),width=2))
-    CodeRGB = do.call("paste0", as.data.frame(CodeRGB))
     
-    AllocPartial[,i-partial+1] = CodeRGB
+    AllocPartial[,i-partial+1] = apply(S, 1, AllocatedNode, nodes = generateNodes(i), nnodes=(i+1)*(i+2)/2)
     
   }
-  
-  AllocCode=AllocPartial[,seats-partial+1]
-  
-  Code3 = floor(S*255.9/seats) #255.9 avoids 7 -> 256 -> HEX #100 case
-  CodeRGB = cbind(matrix("#",dots),format(as.hexmode(Code3[,1]),width=2),format(as.hexmode(Code3[,2]),width=2),format(as.hexmode(Code3[,3]),width=2))
-  CodeRGB = do.call("paste0", as.data.frame(CodeRGB))
   
   #allocation order
   AllocOrder = t(matrix(sapply(AllocStructure, function(x) as.integer(x[[seats-partial+2]])),nrow=seats,ncol=dots))
@@ -225,7 +216,7 @@ AssembleData <- function (dots, seats, step, threshold, vectorAllocCode = c((sea
   Uniform   = apply(R, 1, UniformNearest,   nodes = nodes, nnodes=nnodes)
   Manhattan = apply(R, 1, ManhattanNearest, nodes = nodes, nnodes=nnodes)
   Euclid    = apply(R, 1, EuclidNearest,    nodes = nodes, nnodes=nnodes)
-  Allocated = apply(S, 1, AllocatedNode,    nodes = nodes, nnodes=nnodes)
+  #Allocated = apply(S, 1, AllocatedNode,    nodes = nodes, nnodes=nnodes)
   
   #node labels for seats
   label=cbind(as.character(nodes[,1]),matrix("-",nnodes),as.character(nodes[,2]),matrix("-",nnodes),as.character(nodes[,3]))
@@ -254,7 +245,7 @@ AssembleData <- function (dots, seats, step, threshold, vectorAllocCode = c((sea
   
   AllocPartial=rbind(AllocPartial,matrix(NA,nnodes+el,seats-partial+1))
   dfPartial=as.data.frame(AllocPartial)
-  
+  names(dfPartial)[seats-partial+1] <- "Allocated"
   
   #assembling a data frame
   df = data.frame(
@@ -269,19 +260,13 @@ AssembleData <- function (dots, seats, step, threshold, vectorAllocCode = c((sea
     Sy            = c(S[,2], matrix(NA,nnodes+el)),
     Sz            = c(S[,3], matrix(NA,nnodes+el)),
     
-    Allocated     = c(Allocated, matrix(NA,nnodes+el)),
-    
-    AllocCode     =  c(AllocCode, matrix(NA,nnodes+el)),
-    
-    CodeRGB         = c(CodeRGB, matrix(NA,nnodes+el)),
-    
-    AllocOrderCode=  c(AllocOrderCode, matrix(NA,nnodes+el)),
-    
     Euclid        = c(Euclid, matrix(NA,nnodes+el)),
     Manhattan     = c(Manhattan, matrix(NA,nnodes+el)),
     Uniform       = c(Uniform, matrix(NA,nnodes+el)),
     
-    Malapportionment = c((Allocated!=Euclid)[1:dots], matrix(NA,nnodes+el)),
+    Malapportionment = c(AllocPartial[1:dots,seats-partial+1] != Euclid[1:dots], matrix(NA,nnodes+el)),
+    
+    AllocOrderCode=  c(AllocOrderCode, matrix(NA,nnodes+el)),
     
     label,
     
@@ -341,9 +326,11 @@ colorRGB2 <- c(226,10,23, 100,207,151, 0,112,184) #c("#e20a17","#64cf97","#0070b
 colorRGB3 <- c(242,74,87, 124,218,198, 2,114,195)
 colorRGB4 <- c(256,0,0, 0,256,0, 0,0,256)
 colorRGB5  <- c(224,0,0, 96,224,176, 96,128,224)
-colorRGB5  <- c(240,0,0, 96,224,176, 96,128,224) ## <- this one
+colorRGB5  <- c(240,0,0, 96,224,176, 96,128,224)
+colorRGB6 <- c(256,256,0, 0,256,256, 256,0,256) ##YMC test shifted colours
+colorRGB7 <- c(256,256,256, 256,0,0, 0,0,0) #WRB
 
-colorRGB0 <- colorRGB5 #choose color palette
+colorRGB0 <- colorRGB3 #choose color palette
 
 ```
 
@@ -438,37 +425,37 @@ ggtern(data=df,aes(x,y,z,color=as.factor(AllocOrderCode))) +
 
 #Partial Allocations
 
-p1 <- ggtern(data=df,aes(x,y,z,color=as.factor(df[,17+2])))+
+p1 <- ggtern(data=df,aes(x,y,z,color=as.factor(df[,14+2])))+
   theme_bw()+
   geom_point(alpha=1)+
   labs(x="X",y="Y",z="Z",title="D'Hondt, 2 seats")+
   scale_colour_manual(values=generateColors(colorRGB0,2), guide=FALSE)
 
-p2 <- ggtern(data=df,aes(x,y,z,color=as.factor(df[,17+3])))+
+p2 <- ggtern(data=df,aes(x,y,z,color=as.factor(df[,14+3])))+
   theme_bw()+
   geom_point(alpha=1)+
   labs(x="X",y="Y",z="Z",title="D'Hondt, 3 seats")+
   scale_colour_manual(values=generateColors(colorRGB0,3), guide=FALSE)
 
-p3 <- ggtern(data=df,aes(x,y,z,color=as.factor(df[,17+4])))+
+p3 <- ggtern(data=df,aes(x,y,z,color=as.factor(df[,14+4])))+
   theme_bw()+
   geom_point(alpha=1)+
   labs(x="X",y="Y",z="Z",title="D'Hondt, 4 seats")+
   scale_colour_manual(values=generateColors(colorRGB0,4), guide=FALSE)
 
-p4 <- ggtern(data=df2,aes(x,y,z,color=as.factor(df2[,17+1])))+
+p4 <- ggtern(data=df2,aes(x,y,z,color=as.factor(df2[,14+1])))+
   theme_bw()+
   geom_point(alpha=1)+
   labs(x="X",y="Y",z="Z",title="Sainte-Laguë, 2 seats")+
   scale_colour_manual(values=generateColors(colorRGB0,2), guide=FALSE)
 
-p5 <- ggtern(data=df2,aes(x,y,z,color=as.factor(df2[,17+2])))+
+p5 <- ggtern(data=df2,aes(x,y,z,color=as.factor(df2[,14+2])))+
   theme_bw()+
   geom_point(alpha=1)+
   labs(x="X",y="Y",z="Z",title="Sainte-Laguë, 3 seats")+
   scale_colour_manual(values=generateColors(colorRGB0,3), guide=FALSE)
 
-p6 <- ggtern(data=df2,aes(x,y,z,color=as.factor(df2[,17+3])))+
+p6 <- ggtern(data=df2,aes(x,y,z,color=as.factor(df2[,14+3])))+
   theme_bw()+
   geom_point(alpha=1)+
   labs(x="X",y="Y",z="Z",title="Sainte-Laguë, 4 seats")+

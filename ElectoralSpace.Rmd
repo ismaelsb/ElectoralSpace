@@ -8,6 +8,7 @@ output:
 Código disponible en <https://github.com/ismaelsb/ElectoralSpace>
  
 
+
 **Introducción**
 
 Un diagrama ternario se utiliza para representar 3 variables en 2 dimensiones de forma única para cada conjunto de valores proporcionales. Se puede entender el diagrama como la proyección de los puntos del cuadrante positivo del espacio en
@@ -28,13 +29,14 @@ ggtern(data=data.frame(x=0.2,y=0.3,z=0.5),aes(x,y,z))+geom_point()
 
 ```
 
-**Funciones de asignación electoral (en el código)**
+
+**Funciones de asignación electoral (más en el código)**
 
 Un diagrama como éste se puede usar para representar el resultado de unas elecciones en las que los votos se reparten entre 3 partidos. Cada punto del triángulo se representa con tres coordenadas que se corresponden con el porcentaje de voto obtenido por cada partido. Tenemos un número de escaños a repartir y cada posible reparto se representa con un punto resaltado (nodo) en el triángulo con su correspondiente resultado. El método electoral asignará a cada resultado electoral uno de los posibles repartos de escaños. Las regiones de puntos a las que le son asignados un mismo reparto están representadas con un mismo color. Para dos partidos usaríamos un segmento y para cuatro, un tetraedro. El diagrama es útil para visualizar los posibles escaños en juego cuando el resultado está muy ajustado y próximo a la frontera entre dos o más regiones.
 
 Utilizamos una función de asignación electoral para distintos métodos proporcionales de cocientes con la posibilidad de añadir un umbral de entrada. Se pueden mostrar los efectos del umbral electoral sobre las regiones de asignación en un diagrama.
 
-```{r, echo = F}
+```{r, echo = T}
 
 alloc <- function(parties, votes, seats, step, threshold, partial=seats){
   
@@ -61,6 +63,10 @@ alloc <- function(parties, votes, seats, step, threshold, partial=seats){
   
   return(SeatsList);
 }
+
+```
+
+```{r, echo = F}
 
 generateNodes <- function(seats){ 
   
@@ -215,9 +221,10 @@ return(values);
 
 ```
 
-**Matriz de datos (en el código)**
 
-```{r, echo = F}
+**Matriz de datos (más en el código)**
+
+```{r, echo = T}
 
 AssembleData <- function (dots, seats, step, threshold, partial=seats) {
   
@@ -301,6 +308,10 @@ AssembleData <- function (dots, seats, step, threshold, partial=seats) {
   
 }
 
+```
+
+```{r, echo = F}
+
 VotesData <- function (votes=matrix(0,1), election=matrix(0,1)) {
     
     votes <- prop.table(votes,1)  
@@ -336,6 +347,7 @@ VotesData <- function (votes=matrix(0,1), election=matrix(0,1)) {
 
 ```
 
+
 **Ejemplo de asignación**
 
 ```{r, echo = F}
@@ -345,6 +357,7 @@ votes
 alloc(letters[1:3], votes, 10, 1, .05) #print seats sum and allocation
 
 ```
+
 
 **Configuración**
 
@@ -357,6 +370,7 @@ dots=50000
 threshold=.05
 
 ```
+
 
 **Generando los datos**
 
@@ -389,6 +403,7 @@ colorRGB7 <- c(256,256,256, 256,0,0, 0,0,0) #WRB
 colorRGB0 <- colorRGB3 #choose color palette
 
 ```
+
 
 **Regiones del Espacio Electoral**
 
@@ -432,7 +447,10 @@ ggtern.multi(a2, a3, cols=2)
 
 ```
 
+
 **Comparación de las regiones de Voronoi sobre distintas métricas**
+
+Las distancias euclídea, Manhattan y uniforme producen regiones de Voronoi idénticas:
 
 ```{r, echo = F}
 
@@ -442,6 +460,7 @@ sum(df$Uniform[1:dots]==df$Manhattan[1:dots])/dots
 sum(df$Uniform[1:dots]==df$Euclid[1:dots])/dots
 
 ```
+
 
 **Tamaño de las regiones**
 
@@ -475,6 +494,7 @@ ggtern.multi(m1, m2, cols=2)
 
 ```
 
+
 **Proporción de resultados no asignados al nodo más cercano**
 
 ```{r, echo = F}
@@ -485,6 +505,7 @@ sum(df$Malapportionment[1:dots])/dots
 sum(df2$Malapportionment[1:dots])/dots
 
 ```
+
 
 **Efecto del umbral sobre las regiones**
 
@@ -502,6 +523,7 @@ t1 <- ggtern(data=df3,aes(x,y,z,color=as.factor(Allocated)))+
 ggtern.multi(a1, t1, cols=2)
 
 ```
+
 
 **Regiones para las distintas ordenaciones en la asignación**
 
@@ -525,6 +547,7 @@ o2 <- ggtern(data=df,aes(x,y,z,color=as.factor(AllocOrderCode))) +
 ggtern.multi(o1, o2, cols=2)
 
 ```
+
 
 **Sumas parciales en la asignación**
 
@@ -572,6 +595,7 @@ plist=list(p1,p4,p2,p5,p3,p6)
 ggtern.multi(plotlist=plist, cols=3)
 
 ```
+
 
 **Historia de las electiones**
 

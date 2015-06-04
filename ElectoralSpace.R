@@ -58,7 +58,7 @@ generateDots <- function(dots, method="cartesian"){
     #Ternary simulation. Projects points in[0,1]^3 to the sum(x)=1 hyperplane
     #This creates way more points in the center than in the extremes
     R = matrix(runif(3*dots), nrow=dots, ncol=3)
-    R = R/rowSums(R)
+    R = prop.table(R,1) #rows sum 1
   }
   
   return(R);
@@ -111,13 +111,14 @@ AllocatedNode <- function (y, nodes, nnodes) {
   
 }
 
-generateSpline <- function (dfvotes, dots, seats, nelect, method="natural") {
+generateSpline <- function (dfvotes, method = "natural") {
   
   #generates a spline curve through elections history
-  nnodes = (seats+1)*(seats+2)/2;
   
-  splineX <- spline(x=1:nelect,y=dfvotes[(dots+nnodes+1):(dots+nnodes+nelect),]$x, method=method)
-  splineY <- spline(x=1:nelect,y=dfvotes[(dots+nnodes+1):(dots+nnodes+nelect),]$y, method=method)
+  nelect = dim(dfvotes)[1]
+  
+  splineX <- spline(x=1:nelect,y=dfvotes$x, method=method)
+  splineY <- spline(x=1:nelect,y=dfvotes$y, method=method)
   
   dfSpline = matrix(0, length(splineX[[1]]), 3)
   dfSpline[,1] <- splineX[[2]]
@@ -135,11 +136,11 @@ generateColors <- function (colorRGB, seats) {
   nnodes = (seats+1)*(seats+2)/2;
   nodes <- generateNodes(seats)
   #decimal codes for colors in nodes
-  CodeDecRGB = floor(nodes*255.9/seats) #255.9 avoids seats -> 256 -> HEX #100 case
+  Code3 = floor(nodes*255.9/seats) #255.9 avoids seats -> 256 -> HEX #100 case
   #linear transformation to fixed extreme colors
-  Code3 = floor(CodeDecRGB%*%matrix(colorRGB,3,3, byrow=T)/256)
+  CodeDecRGB = floor(Code3%*%matrix(colorRGB,3,3, byrow=T)/256)
   #hex codes for colors in nodes
-  CodeRGB=cbind(matrix("#",nnodes),format(as.hexmode(Code3[,1]),width=2),format(as.hexmode(Code3[,2]),width=2),format(as.hexmode(Code3[,3]),width=2))
+  CodeRGB=cbind(matrix("#",nnodes),format(as.hexmode(CodeDecRGB[,1]),width=2),format(as.hexmode(CodeDecRGB[,2]),width=2),format(as.hexmode(CodeDecRGB[,3]),width=2))
   CodeRGB=do.call("paste0",as.data.frame(CodeRGB))
   values=CodeRGB
   
@@ -159,27 +160,29 @@ generateOrderColors <- function (colorRGB, seats, validCodes=TRUE) {
   
   Order_from_code <- (cbind(OrderRests,0)-cbind(0,OrderRests))[,1:seats]/t(matrix(rep(3^(0:(seats-1)),3^seats),ncol=3^seats,nrow=seats))+1
   vectorOrderCode3 <- 2^(0:(seats-1))
-  CodeDecRGB = cbind((Order_from_code == 1)%*%as.matrix(vectorOrderCode3),
-                     (Order_from_code == 2)%*%as.matrix(vectorOrderCode3),
-                     (Order_from_code == 3)%*%as.matrix(vectorOrderCode3))
-
   #decimal codes for colors in nodes
-  CodeDecRGB = floor(CodeDecRGB*255.9/(2^seats)) #255.9 avoids seats -> 256 -> HEX #100 case
+  Code3 = cbind((Order_from_code == 1)%*%as.matrix(vectorOrderCode3),
+                (Order_from_code == 2)%*%as.matrix(vectorOrderCode3),
+                (Order_from_code == 3)%*%as.matrix(vectorOrderCode3))
   
   #linear transformation to fixed extreme colors
-  Code3 = floor(CodeDecRGB%*%matrix(colorRGB,3,3, byrow=T)/256)
-
+  CodeDecRGB = floor(Code3%*%matrix(colorRGB,3,3, byrow=T)/2^seats)
+  
   #hex codes for colors in nodes
-  CodeRGB = cbind(matrix("#",3^seats),format(as.hexmode(Code3[,1]),width=2),format(as.hexmode(Code3[,2]),width=2),format(as.hexmode(Code3[,3]),width=2))
+  CodeRGB = cbind(matrix("#",3^seats),format(as.hexmode(CodeDecRGB[,1]),width=2),format(as.hexmode(CodeDecRGB[,2]),width=2),format(as.hexmode(CodeDecRGB[,3]),width=2))
   CodeRGB = do.call("paste0",as.data.frame(CodeRGB))
 
-  values = CodeRGB[c(1, validCodes)] #added color 1 bc scale_color_manual() demanded one more color
-
+  #values = CodeRGB[validCodes]
+  values = CodeRGB[c(validCodes, 3^seats)] #added one more color bc scale_color_manual() demanded one more color
+  #values = CodeRGB[c(1, validCodes)] #added one more color bc scale_color_manual() demanded one more color
+  
+  
 return(values);
 
 }
 
-AssembleData <- function (dots, seats, step, threshold, vectorOrderCode=as.matrix(3^(0:(seats-1))), votes=matrix(0,1), election=matrix(0,1), partial=seats) {
+
+AssembleData <- function (dots, seats, step, threshold, partial=seats) {
   
   #Generate random electoral results
   R <- generateDots(dots)
@@ -221,54 +224,38 @@ AssembleData <- function (dots, seats, step, threshold, vectorOrderCode=as.matri
   label=do.call("paste0",as.data.frame(label))
   label=rbind(matrix("",dots),as.matrix(label))
   
-  #elections
-  elect = matrix(NA,dots+nnodes)
-  if (norm(election)!=0) elect = rbind(elect, election)
-  
   #attach node points                
   x <-rbind(as.matrix(R[,1]),as.matrix(nodes[,1]/seats))
   y <-rbind(as.matrix(R[,2]),as.matrix(nodes[,2]/seats))
   z <-rbind(as.matrix(R[,3]),as.matrix(nodes[,3]/seats))
   
-  el=0;
-  if (norm(votes) != 0){
-    
-    x <- c(x, votes[,1])
-    y <- c(y, votes[,2])
-    z <- c(z, votes[,3])
-    el=dim(votes)[1]
-    label = c(label,as.character(election))
-    
-  }
-  
-  AllocPartial=rbind(AllocPartial,matrix(NA,nnodes+el,seats-partial+1))
+  AllocPartial=rbind(AllocPartial,matrix(NA,nnodes,seats-partial+1))
   dfPartial=as.data.frame(AllocPartial)
   names(dfPartial)[seats-partial+1] <- "Allocated"
   
   #assembling a data frame
   df = data.frame(
     
-    type          = c(matrix("dot",dots), matrix("node",nnodes), matrix("vote",el,1)),
+    type          = c(matrix("dot",dots), matrix("node",nnodes)),
     
     x ,
     y ,
     z ,
     
-    Sx            = c(S[,1], matrix(NA,nnodes+el)),
-    Sy            = c(S[,2], matrix(NA,nnodes+el)),
-    Sz            = c(S[,3], matrix(NA,nnodes+el)),
+    Sx            = c(S[,1], matrix(NA,nnodes)),
+    Sy            = c(S[,2], matrix(NA,nnodes)),
+    Sz            = c(S[,3], matrix(NA,nnodes)),
     
-    Euclid        = c(Euclid, matrix(NA,nnodes+el)),
-    Manhattan     = c(Manhattan, matrix(NA,nnodes+el)),
-    Uniform       = c(Uniform, matrix(NA,nnodes+el)),
+    Euclid        = c(Euclid, matrix(NA,nnodes)),
+    Manhattan     = c(Manhattan, matrix(NA,nnodes)),
+    Uniform       = c(Uniform, matrix(NA,nnodes)),
     
-    Malapportionment = c(AllocPartial[1:dots,seats-partial+1] != Euclid[1:dots], matrix(NA,nnodes+el)),
+    Malapportionment = c(AllocPartial[1:dots,seats-partial+1] != Euclid[1:dots], matrix(NA,nnodes)),
     
-    AllocOrderCode=  c(AllocOrderCode, matrix(NA,nnodes+el)),
+    AllocOrderCode=  c(AllocOrderCode, matrix(NA,nnodes)),
     
-    label,
+    label
     
-    elect
   )
   
   df=cbind(df,dfPartial)
@@ -276,6 +263,40 @@ AssembleData <- function (dots, seats, step, threshold, vectorOrderCode=as.matri
   return(df);
   
 }
+
+VotesData <- function (votes=matrix(0,1), election=matrix(0,1)) {
+    
+    votes <- prop.table(votes,1)  
+  
+    x <- votes[,1]
+    y <- votes[,2]
+    z <- votes[,3]
+    
+    el=dim(votes)[1]
+    label = as.character(election)
+  
+  
+  #assembling a data frame
+  df = data.frame(
+    
+    type = matrix("vote",el,1),
+    
+    x ,
+    y ,
+    z ,
+
+    label,
+    
+    election,
+    
+    color = matrix(NA,el,1)
+    
+  )
+  
+  return(df);
+  
+}
+
 
 #Allocation example (step=2 Sainte-Laguë; step=1 D'Hondt)
 votes <- sample(1:1000, 3) 
@@ -345,11 +366,6 @@ sum(df$Euclid[1:dots]==df$Manhattan[1:dots])/dots
 sum(df$Uniform[1:dots]==df$Manhattan[1:dots])/dots
 sum(df$Uniform[1:dots]==df$Euclid[1:dots])/dots
 
-#points not allocated by D'Hondt in their corresponding Voronoi region
-sum(df$Malapportionment[1:dots])/dots
-#points not allocated by Sainte-Laguë in their corresponding Voronoi region
-sum(df2$Malapportionment[1:dots])/dots
-
 #size of the regions # 1 ~= dots/nnodes
 nnodes=(seats+1)*(seats+2)/2;
 RegionSize = table(df$Allocated[1:dots])/(dots/nnodes)
@@ -376,6 +392,11 @@ m2 <- ggtern(data=df2,aes(x,y,z,color=Malapportionment)) +
 
 ggtern.multi(m1, m2, cols=2)
 
+#points not allocated by D'Hondt in their corresponding Voronoi region
+sum(df$Malapportionment[1:dots])/dots
+#points not allocated by Sainte-Laguë in their corresponding Voronoi region
+sum(df2$Malapportionment[1:dots])/dots
+
 #Threshold effect
 t1 <- ggtern(data=df3,aes(x,y,z,color=as.factor(Allocated)))+
   theme_bw()+
@@ -387,56 +408,56 @@ t1 <- ggtern(data=df3,aes(x,y,z,color=as.factor(Allocated)))+
 
 ggtern.multi(a1, t1, cols=2)
 
-df3 = AssembleData(dots, seats=9, step=1, threshold=.15)
-
 #ordering subregions
 o1 <- ggtern(data=df,aes(x,y,z,color=as.factor(AllocOrderCode))) +
-  theme_rgbw() +
+  theme_bw()+
   geom_point(alpha=0.8) +
   labs(x="X",y="Y",z="Z",title="Allocation ordering regions")+
   scale_colour_grey(start = 0.1, end = 1, na.value = "black", guide = FALSE)
 
 o2 <- ggtern(data=df,aes(x,y,z,color=as.factor(AllocOrderCode))) +
-  theme_rgbw() +
+  theme_bw()+
   geom_point(alpha=1) +
   labs(x="X",y="Y",z="Z",title="They come in colors")+
-  scale_colour_manual(values=generateOrderColors(colorRGB3,seats,sort(unique(df$AllocOrderCode))), guide=FALSE, na.value="khaki2")
+  scale_colour_manual(values=
+      generateOrderColors(colorRGB0,seats,sort(unique(df$AllocOrderCode))),
+      guide=FALSE, na.value="khaki2")
 
 ggtern.multi(o1, o2, cols=2)
 
 #Partial Allocations
 
-p1 <- ggtern(data=df,aes(x,y,z,color=as.factor(df[,14+2])))+
+p1 <- ggtern(data=df,aes(x,y,z,color=as.factor(df$V2)))+
   theme_bw()+
   geom_point(alpha=1)+
   labs(x="X",y="Y",z="Z",title="D'Hondt, 2 seats")+
   scale_colour_manual(values=generateColors(colorRGB0,2), guide=FALSE)
 
-p2 <- ggtern(data=df,aes(x,y,z,color=as.factor(df[,14+3])))+
+p2 <- ggtern(data=df,aes(x,y,z,color=as.factor(df$V3)))+
   theme_bw()+
   geom_point(alpha=1)+
   labs(x="X",y="Y",z="Z",title="D'Hondt, 3 seats")+
   scale_colour_manual(values=generateColors(colorRGB0,3), guide=FALSE)
 
-p3 <- ggtern(data=df,aes(x,y,z,color=as.factor(df[,14+4])))+
+p3 <- ggtern(data=df,aes(x,y,z,color=as.factor(df$V4)))+
   theme_bw()+
   geom_point(alpha=1)+
   labs(x="X",y="Y",z="Z",title="D'Hondt, 4 seats")+
   scale_colour_manual(values=generateColors(colorRGB0,4), guide=FALSE)
 
-p4 <- ggtern(data=df2,aes(x,y,z,color=as.factor(df2[,14+1])))+
+p4 <- ggtern(data=df2,aes(x,y,z,color=as.factor(df2$V1)))+
   theme_bw()+
   geom_point(alpha=1)+
   labs(x="X",y="Y",z="Z",title="Sainte-Laguë, 2 seats")+
   scale_colour_manual(values=generateColors(colorRGB0,2), guide=FALSE)
 
-p5 <- ggtern(data=df2,aes(x,y,z,color=as.factor(df2[,14+2])))+
+p5 <- ggtern(data=df2,aes(x,y,z,color=as.factor(df2$V2)))+
   theme_bw()+
   geom_point(alpha=1)+
   labs(x="X",y="Y",z="Z",title="Sainte-Laguë, 3 seats")+
   scale_colour_manual(values=generateColors(colorRGB0,3), guide=FALSE)
 
-p6 <- ggtern(data=df2,aes(x,y,z,color=as.factor(df2[,14+3])))+
+p6 <- ggtern(data=df2,aes(x,y,z,color=as.factor(df2$V3)))+
   theme_bw()+
   geom_point(alpha=1)+
   labs(x="X",y="Y",z="Z",title="Sainte-Laguë, 4 seats")+
@@ -446,14 +467,15 @@ plist=list(p1,p4,p2,p5,p3,p6)
 ggtern.multi(plotlist=plist, cols=3)
 
 #history of election results
-nelect=10;
-votes=matrix(runif(nelect*3),nelect,3)
-votes <- votes/rowSums(votes)
+
+#nelect=10;
+#votes=matrix(runif(nelect*3),nelect,3)
+#votes <- prop.table(votes,1)
 
 election=as.matrix(seq(from=1979, to=2015, by=4))
 
 #example
-seats=7; step=1;
+seats=5; step=1;
 nelect=10;
 votes=matrix(0,nelect,3)
 votes[,1]=c(350,430,290,400,390,450,470,360,280,230)
@@ -464,24 +486,23 @@ votes[,2]=c( 80, 90,130, 70, 90, 80,120,140,130,110)
 #votes[,3]=c(258,  0,185,144,159, 90, 47, 73,114, 75)
 #votes[,2]=c(  0,  0, 82,  0,  0,  0,  0,  0,  0,138)
 
-votes <- votes/rowSums(votes)
-nnodes = (seats+1)*(seats+2)/2;
+dfvotes <- VotesData(votes=votes, election=election)
 
-dfvotes = AssembleData(dots, seats, step, threshold, votes=votes, election=election)
+dfSpline <- generateSpline(dfvotes)
 
-dfSpline <- generateSpline(dfvotes, dots, seats, nelect)
-
-ggtern(data=dfvotes,aes(x,y,z,color=as.factor(Allocated)))+ #CodeRGB also works
+ggtern(data=df,aes(x,y,z,color=as.factor(Allocated)))+
   #theme_rgbw()+
   theme_bw()+
   geom_point(alpha=1)+
-  geom_text(data=dfvotes[(dots+nnodes+1):(dots+nnodes+nelect),],aes(label=label), color="slateblue4", hjust=1.2, vjust=0.3, size=3, angle=90)+ 
-  geom_text(data=dfvotes[(dots+1):(dots+nnodes),],aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
+  geom_point(data = dfvotes,aes(x,y,z,color=as.factor(color)),alpha=1)+
+  geom_text(data=dfvotes,aes(label=label), color="slateblue4", hjust=1.2, vjust=0.3, size=3, angle=90)+ 
+  geom_text(data=df[(dots+1):(dots+nnodes),],aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
   geom_path(data=dfSpline,colour="darkgreen", linetype=1, size=1)+ 
-  #geom_path(data=dfvotes[(dots+nnodes+1):(dots+nnodes+nelect),],colour="brown3", linetype=1, size=0.7)+ 
+  #geom_path(data=dfvotes,colour="white", linetype=1, size=0.7)+ 
   labs(x="SocLib",y="SocCom",z="LibCon",title="Past Elections")+
   #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
   scale_colour_manual(values=generateColors(colorRGB0,seats), guide=FALSE, na.value="khaki2")
+
 
 
 #other colour palettes

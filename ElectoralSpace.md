@@ -1,9 +1,29 @@
-#Install ggtern from an online CRAN repository
-install.packages("ggtern")
-#Load the ggtern library
-library(ggtern)
-#library(stats)
+# Electoral Space
 
+Código disponible en <https://github.com/ismaelsb/ElectoralSpace>
+ 
+
+
+**Introducción**
+
+Un diagrama ternario se utiliza para representar 3 variables en 2 dimensiones de forma única para cada conjunto de valores proporcionales. Se puede entender el diagrama como la proyección de los puntos del cuadrante positivo del espacio en
+el hiperplano cuya suma de coordenadas es 1. La imagen de la proyección es un triángulo equilátero. De la misma manera podemos representar dos valores en un segmento o cuatro valores en un tetraedro.
+
+
+
+![](ElectoralSpace_files/figure-html/unnamed-chunk-2-1.png) 
+
+
+**Funciones de asignación electoral (más en el código)**
+
+Un diagrama como éste se puede usar para representar el resultado de unas elecciones en las que los votos se reparten entre 3 partidos. Cada punto del triángulo se representa con tres coordenadas que se corresponden con el porcentaje de voto obtenido por cada partido. Tenemos un número de escaños a repartir y cada posible reparto se representa con un punto resaltado (nodo) en el triángulo con su correspondiente resultado. El método electoral asignará a cada resultado electoral uno de los posibles repartos de escaños. Las regiones de puntos a las que le son asignados un mismo reparto están representadas con un mismo color. Para dos partidos usaríamos un segmento y para cuatro, un tetraedro. El diagrama es útil para visualizar los posibles escaños en juego cuando el resultado está muy ajustado y próximo a la frontera entre dos o más regiones.
+
+Utilizamos una función de asignación electoral para distintos métodos proporcionales de cocientes con la posibilidad de añadir un umbral de entrada. 
+
+Mostramos algunas de las funciones utilizadas para calcular la asignación y generar los diagramas:
+
+
+```r
 alloc <- function(parties, votes, seats, step, threshold=0){
   
   #function for the seat allocation and its ordering
@@ -57,7 +77,10 @@ alloc <- function(parties, votes, seats, step, threshold=0){
   return(SeatsList);
   
 }
+```
 
+
+```r
 generateNodes <- function(seats){ 
   
   #define nodes
@@ -92,29 +115,12 @@ generateDots <- function(dots, method="cartesian"){
   return(R);
   
 }
+```
 
-CartesianToTernary <- function (x) {
-  
-  #for homogeneous simulation
-  #send an subset of [0,1]x[0,1] which is an equilateral triangle to the ternary diagram 
-  
-  while ((x[1]<=1/2 & x[2]>2*sin(pi/3)*x[1]) | (x[1]>1/2 & x[2]>2*sin(pi/3)*(1-x[1])))
-    x=runif(2);
-  
-  v = cbind(1-x[1]-x[2]/(2*sin(pi/3)),x[2]/sin(pi/3),x[1]-x[2]/(2*sin(pi/3)));
-  
-  return(v);
-  
-}
 
-UniformNearest <- function (x, seats, nodes, nnodes) {
-  
-  Uniform = which.min(apply(abs(nodes/seats - rep(1,nnodes) %*% t(x)),1,max))
-  
-  return(Uniform);
-  
-}
 
+
+```r
 ManhattanNearest <- function (x, seats, nodes, nnodes) {
   
   Manhattan = which.min(apply(abs(nodes/seats - rep(1,nnodes) %*% t(x)),1,sum))
@@ -122,23 +128,12 @@ ManhattanNearest <- function (x, seats, nodes, nnodes) {
   return(Manhattan);
   
 }
+```
 
-EuclidNearest <- function (x, seats, nodes, nnodes) {
-  
-  Euclid = which.min(apply((nodes/seats - rep(1,nnodes) %*% t(x))^2,1,sum))
-  
-  return(Euclid);
-  
-}
 
-AllocatedNode <- function (y, nodes, nnodes) {
-  
-  Node = which.min(apply(abs(nodes - rep(1,nnodes) %*% t(y)),1,max))
-  
-  return(Node);
-  
-}
 
+
+```r
 generateSpline <- function (dfvotes, method = "natural") {
   
   #generates a spline curve through elections history
@@ -208,8 +203,13 @@ generateOrderColors <- function (colorRGB, seats, validCodes=TRUE) {
 return(values);
 
 }
+```
 
 
+**Matriz de datos (más en el código)**
+
+
+```r
 AssembleData <- function (dots, seats, step=1, threshold=0) {
   
   
@@ -305,53 +305,74 @@ AssembleData <- function (dots, seats, step=1, threshold=0) {
   return(df);
   
 }
-
-VotesData <- function (votes=matrix(0,1), election=matrix(0,1)) {
-    
-    votes <- prop.table(votes,1)  
-  
-    x <- votes[,1]
-    y <- votes[,2]
-    z <- votes[,3]
-    
-    el=dim(votes)[1]
-    label = as.character(election)
-  
-  
-  #assembling a data frame
-  df = data.frame(
-    
-    type = matrix("vote",el,1),
-    
-    x ,
-    y ,
-    z ,
-
-    label,
-    
-    election,
-    
-    color = matrix(NA,el,1)
-    
-  )
-  
-  return(df);
-  
-}
+```
 
 
-#Allocation example (step=2 Sainte-Lagu�; step=1 D'Hondt)
-set.seed(156)
-votes <- sample(1:1000, 3) 
-votes
-alloc(letters[1:3], votes, 9, c(1,2), .05) #print seats sum and allocation
 
+
+**Ejemplo de asignación**
+
+
+```
+## [1]  77 265 117
+```
+
+```
+## [[1]]
+## [[1]]$`divisor step 1 for 9 seats`
+## 
+## a b c 
+## 1 6 2 
+## 
+## [[1]]$`ordering for divisor step 1 for 9 seats`
+##       [,1]
+##  [1,] "b" 
+##  [2,] "b" 
+##  [3,] "c" 
+##  [4,] "b" 
+##  [5,] "a" 
+##  [6,] "b" 
+##  [7,] "c" 
+##  [8,] "b" 
+##  [9,] "b" 
+## 
+## 
+## [[2]]
+## [[2]]$`divisor step 2 for 9 seats`
+## 
+## a b c 
+## 2 5 2 
+## 
+## [[2]]$`ordering for divisor step 2 for 9 seats`
+##       [,1]
+##  [1,] "b" 
+##  [2,] "c" 
+##  [3,] "b" 
+##  [4,] "a" 
+##  [5,] "b" 
+##  [6,] "c" 
+##  [7,] "b" 
+##  [8,] "b" 
+##  [9,] "a"
+```
+
+
+**Configuración**
+
+
+```r
 #presets
 seats=2:5;
-step=c(1,2); #(2 Sainte-Lagu� 1 D'Hondt)
+step=c(1,2); #(2 Sainte-Laguë 1 D'Hondt)
 dots=40000
 threshold=0
+```
 
+
+**Generando los datos**
+
+
+```r
 #Assemble the data frame
 
 df = AssembleData(dots, seats, step)
@@ -361,176 +382,78 @@ df = AssembleData(dots, seats, step)
 #df = AssembleData(dots, c(3,5,4), c(2,1), threshold)
 
 dfT = AssembleData(dots, seats=5, threshold=.20)
+```
 
-#colors for palettes
-colorRGB1 <- c(242,74,87, 124,218,198, 91,168,246) #c("#f24a57","#7cdac6","#5ba8f6")
-colorRGB2 <- c(226,10,23, 100,207,151, 0,112,184) #c("#e20a17","#64cf97","#0070b8")
-colorRGB3 <- c(242,74,87, 124,218,198, 2,114,195) #<--
-colorRGB4 <- c(256,0,0, 0,256,0, 0,0,256)
-colorRGB5 <- c(224,0,0, 96,224,176, 96,128,224)
-colorRGB5 <- c(240,0,0, 96,224,176, 96,128,224)
-colorRGB6 <- c(256,256,0, 0,256,256, 256,0,256) ##YMC test shifted colours
-colorRGB7 <- c(256,256,256, 256,0,0, 0,0,0) #WRB
 
-colorRGB0 <- colorRGB3 #choose color palette
 
-#Allocation
 
-a1 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Allocated)))+
-  theme_bw()+
-  geom_point(alpha=1)+
-  geom_text(aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
-  labs(x="X",y="Y",z="Z",title="D'Hondt Allocation")+
-  #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
-  scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
+**Regiones del Espacio Electoral**
 
-a2 <- ggtern(data=df[[2]],aes(x,y,z,color=as.factor(Allocated)))+
-  theme_bw()+
-  geom_point(alpha=1)+
-  geom_text(aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
-  labs(x="X",y="Y",z="Z",title="Sainte-Lagu� Allocation")+
-  #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
-  scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
+Las regiones creadas por el reparto de D'Hondt no se corresponden con regiones de Voronoi de los nodos. Asigna correctamente más del 60% de los puntos. El reparto de Sainte-Laguë se aproxima más, más de un 90%, a las regiones de Voronoi pero no llega a ser igual. En D'Hondt el tamaño de las distintas regiones es similar, en Sainte-Laguë los nodos se encuentran en el centro de ellas. Las regiones de Voronoi resultarían si a cada punto se le asignara el nodo más próximo. Para este tipo de reparto se obtienen los mismos resultados si utilizamos la distancia Euclídea, Manhattan o la uniforme.
 
-ggtern.multi(a1, a2, cols=2)
+Se estudia aquí la asignación no sólo en resultado, sino también en el orden de reparto de los escaños, y se dibujan diagramas que muestran las regiones del Espacio Electoral divididas en subregiones para cada posible ordenación de la asignación. El diagrama de las subregiones visibiliza de manera bastante destacable la geometría de las regiones electorales.
 
-#Voronoi
+![](ElectoralSpace_files/figure-html/unnamed-chunk-15-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-15-2.png) 
 
-a3 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Manhattan)))+
-  theme_bw()+
-  geom_point(alpha=1)+
-  geom_text(aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
-  labs(x="X",y="Y",z="Z",title="Voronoi Allocation")+
-  #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
-  scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
 
-ggtern.multi(a2, a3, cols=2)
+**Comparación de las regiones de Voronoi sobre distintas métricas**
 
-#equivalence between Voronoi regions using different distances and between those and electoral regions
-sum(df[[1]]$Euclid[1:dots]==df[[1]]$Manhattan[1:dots])/dots
-sum(df[[1]]$Uniform[1:dots]==df[[1]]$Manhattan[1:dots])/dots
-sum(df[[1]]$Uniform[1:dots]==df[[1]]$Euclid[1:dots])/dots
+Las distancias euclídea, Manhattan y uniforme producen regiones de Voronoi idénticas:
 
-#size of the regions # 1 ~= dots/nnodes
-nnodes=(max(seats)+1)*(max(seats)+2)/2;
-RegionSize  = table(df[[1]]$Allocated[1:dots])/(dots/nnodes)
-RegionSize2 = table(df[[2]]$Allocated[1:dots])/(dots/nnodes)
 
-par(mfrow=c(2,1))
-plot(RegionSize, main="D'Hondt region sizes")
-plot(RegionSize2,main="Sainte-Lagu� region sizes" )
-par(mfrow=c(1,1))
+```
+## [1] 1
+```
 
-#malapportionment
-m1 <- ggtern(data=df[[1]],aes(x,y,z,color=Malapportionment)) +
-  theme_rgbw() +
-  geom_point(alpha=0.8) +
-  labs(x="X",y="Y",z="Z",title="D'Hondt Malapportionment")+
-  #scale_colour_grey(na.value = "black", guide = FALSE)
-  scale_colour_brewer(palette = "YlGnBu", na.value = "grey60", guide = FALSE)
+```
+## [1] 1
+```
 
-m2 <- ggtern(data=df[[2]],aes(x,y,z,color=Malapportionment)) +
-  theme_rgbw() +
-  geom_point(alpha=0.8) +
-  labs(x="X",y="Y",z="Z",title="Sainte-Lagu� Malapportionment")+
-  scale_colour_brewer(palette = "YlGnBu", na.value = "grey60", guide = FALSE)
+```
+## [1] 1
+```
 
-ggtern.multi(m1, m2, cols=2)
 
-#points not allocated by D'Hondt in their corresponding Voronoi region
-sum(df[[1]]$Malapportionment[1:dots])/dots
-#points not allocated by Sainte-Lagu� in their corresponding Voronoi region
-sum(df[[2]]$Malapportionment[1:dots])/dots
+**Tamaño de las regiones**
 
-#Threshold effect
-t1 <- ggtern(data=dfT[[1]],aes(x,y,z,color=as.factor(Allocated)))+
-  theme_bw()+
-  geom_point(alpha=1)+
-  geom_text(aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
-  labs(x="X",y="Y",z="Z",title="Threshold effect on regions")+
-  #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
-  scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
+![](ElectoralSpace_files/figure-html/unnamed-chunk-17-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-17-2.png) 
 
-ggtern.multi(a1, t1, cols=2)
 
-#ordering subregions
-o1 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(AllocOrderCode))) +
-  theme_bw()+
-  geom_point(alpha=0.8) +
-  labs(x="X",y="Y",z="Z",title="Allocation ordering regions")+
-  scale_colour_grey(start = 0.1, end = 1, na.value = "black", guide = FALSE)
+**Proporción de resultados no asignados al nodo más cercano**
 
-o2 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(AllocOrderCode))) +
-  theme_bw()+
-  geom_point(alpha=1) +
-  labs(x="X",y="Y",z="Z",title="They come in colors")+
-  scale_colour_manual(values=
-      generateOrderColors(colorRGB0,max(seats),sort(unique(df[[1]]$AllocOrderCode))),
-      guide=FALSE, na.value="khaki2")
 
-ggtern.multi(o1, o2, cols=2)
+```
+## [1] 0.365225
+```
 
-#Partial Allocations
+```
+## [1] 0.075875
+```
 
-p1 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(df[[1]]$All2)))+
-  theme_bw()+
-  geom_point(alpha=1)+
-  labs(x="X",y="Y",z="Z",title="D'Hondt, 2 seats")+
-  scale_colour_manual(values=generateColors(colorRGB0,2), guide=FALSE)
 
-p2 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(df[[1]]$All3)))+
-  theme_bw()+
-  geom_point(alpha=1)+
-  labs(x="X",y="Y",z="Z",title="D'Hondt, 3 seats")+
-  scale_colour_manual(values=generateColors(colorRGB0,3), guide=FALSE)
+**Efecto del umbral sobre las regiones**
 
-p3 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(df[[1]]$All4)))+
-  theme_bw()+
-  geom_point(alpha=1)+
-  labs(x="X",y="Y",z="Z",title="D'Hondt, 4 seats")+
-  scale_colour_manual(values=generateColors(colorRGB0,4), guide=FALSE)
+![](ElectoralSpace_files/figure-html/unnamed-chunk-19-1.png) 
 
-p4 <- ggtern(data=df[[2]],aes(x,y,z,color=as.factor(df[[2]]$All2)))+
-  theme_bw()+
-  geom_point(alpha=1)+
-  labs(x="X",y="Y",z="Z",title="Sainte-Lagu�, 2 seats")+
-  scale_colour_manual(values=generateColors(colorRGB0,2), guide=FALSE)
 
-p5 <- ggtern(data=df[[2]],aes(x,y,z,color=as.factor(df[[2]]$All3)))+
-  theme_bw()+
-  geom_point(alpha=1)+
-  labs(x="X",y="Y",z="Z",title="Sainte-Lagu�, 3 seats")+
-  scale_colour_manual(values=generateColors(colorRGB0,3), guide=FALSE)
+**Regiones para las distintas ordenaciones en la asignación**
 
-p6 <- ggtern(data=df[[2]],aes(x,y,z,color=as.factor(df[[2]]$All4)))+
-  theme_bw()+
-  geom_point(alpha=1)+
-  labs(x="X",y="Y",z="Z",title="Sainte-Lagu�, 4 seats")+
-  scale_colour_manual(values=generateColors(colorRGB0,4), guide=FALSE)
+![](ElectoralSpace_files/figure-html/unnamed-chunk-20-1.png) 
 
-plist=list(p1,p4,p2,p5,p3,p6)
-ggtern.multi(plotlist=plist, cols=3)
 
-#history of election results
+**Sumas parciales en la asignación**
 
-#nelect=10;
-#votes=matrix(runif(nelect*3),nelect,3)
-#votes <- prop.table(votes,1)
+![](ElectoralSpace_files/figure-html/unnamed-chunk-21-1.png) 
 
-election=as.matrix(seq(from=1979, to=2015, by=4))
 
-#example
-#seats=5; step=1;
-nelect=10;
-votes=matrix(0,nelect,3)
-votes[,1]=c(350,430,290,400,390,450,470,360,280,230)
-votes[,3]=c(250,180,220,160,140,110, 80, 60, 90,140)
-votes[,2]=c( 80, 90,130, 70, 90, 80,120,140,130,110)
+**Historia de las electiones**
 
-#votes[,1]=c(355,437,282,393,408,479,468,356,287,234)
-#votes[,3]=c(258,  0,185,144,159, 90, 47, 73,114, 75)
-#votes[,2]=c(  0,  0, 82,  0,  0,  0,  0,  0,  0,138)
+Podemos también representar datos históricos o geográficos de varias elecciones sobre el diagrama.
 
+
+
+
+```r
 dfvotes <- VotesData(votes=votes, election=election)
 
 dfSpline <- generateSpline(dfvotes)
@@ -547,33 +470,6 @@ ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Allocated)))+
   labs(x="SocLib",y="SocCom",z="LibCon",title="Past Elections")+
   #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
   scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
+```
 
-
-
-#other colour palettes
-library(RColorBrewer)
-# RdYlGn 11
-# Spectral 11
-# YlGnBu 9
-values=colorRampPalette(brewer.pal(8,"Spectral"))(nnodes)
-values=rev(colorRampPalette(brewer.pal(8,"PuBuGn"))(nnodes))
-values=colorRampPalette(brewer.pal(9,"Spectral"))(nnodes+10)[14:(nnodes+13)]
-values = colorRampPalette(as.character(c("#00FF00","#FF0000","#0000FF")))(nnodes)
-values = colorRampPalette(c(rev(brewer.pal(9, "Blues")),brewer.pal(9, "Reds")))(nnodes)
-values = colorRampPalette(as.character(c("#f24a57","#7cdac6","#5ba8f6")))(nnodes)
-values = colorRampPalette(as.character(c("#e20a17","#64cf97","#0070b8")))(nnodes)
-
-
-#install.packages("nnet")
-library('nnet')
-fit <- multinom(Allocated ~ x + y + z, data = df)
-
-summary(fit)
-str(fit)
-plot(fit, df)
-print(fit)
-fit$coefs
-fit$terms
-fit$fitted
-
-
+![](ElectoralSpace_files/figure-html/unnamed-chunk-23-1.png) 

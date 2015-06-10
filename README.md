@@ -13,7 +13,7 @@ Se estudia aquí la asignación no sólo en resultado, sino también en el orden
 
 Podemos también representar datos históricos o geográficos de varias elecciones sobre el diagrama.
 
-En http://rpubs.com/ismaelsb/ElectoralSpace se presentan los resultados 
+En http://rpubs.com/ismaelsb/ElectoralSpace o en https://github.com/ismaelsb/ElectoralSpace/blob/master/ElectoralSpace.md se presentan los resultados 
 
 El código utilizado para estos cálculos y representaciones se encuentra en este enlace https://github.com/ismaelsb/ElectoralSpace/blob/master/ElectoralSpace.R
 

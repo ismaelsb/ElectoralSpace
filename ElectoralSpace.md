@@ -165,7 +165,9 @@ alloc(letters[1:3], votes, 9, c(1,2), .05) #print seats sum and allocation
 
 
 ```r
-generateDots <- function(dots, method="cartesian"){
+generateDots <- function(dotsperside, method="lattice"){
+  
+  dots <- (dotsperside+1)*(dotsperside+2)/2
   
   if (method == "cartesian") {
     #Map Cartesian to Ternary to produce a homegeneous simulation
@@ -177,6 +179,30 @@ generateDots <- function(dots, method="cartesian"){
     #Ternary simulation. Projects points in[0,1]^3 to the sum(x)=1 hyperplane
     #This creates way more points in the center than in the extremes
     R = matrix(runif(3*dots), nrow=dots, ncol=3)
+    R = prop.table(R,1) #rows sum 1
+  }
+  
+  else if (method == "lattice") {
+    #lattice of dots
+    #if n is dotsperside
+    #dots <- (n+1)*(n+2)/2  but we need the inverse calculation
+    
+    #n <- floor((sqrt(8*dots+1)-3)/2) #exact
+    #n <- floor(sqrt(2*dots)) #aprox
+    
+    #we need to redefine dots
+    #dots <- (n+1)*(n+2)/2
+    R <- matrix(0,nrow=dots, ncol=3)
+    i <- 1
+    for (x in seq(0,1,1/dotsperside)){
+      
+      for (y in seq(0,1-x,1/dotsperside)){
+        
+        R[i,]<- c(x,y,1-x-y)
+        i <- i+1
+        
+      }
+    }
     R = prop.table(R,1) #rows sum 1
   }
   
@@ -208,11 +234,12 @@ ManhattanNearest <- function (x, seats, nodes, nnodes) {
 
 
 ```r
-SpatialData <- function (dots, seats, step=1, threshold=0) {
+SpatialData <- function (dotsperside, seats, step=1, threshold=0, method="lattice") {
   
   
   #Generate random electoral results
-  R <- generateDots(dots)
+  R <- generateDots(dotsperside, method=method)
+  dots=dim(R)[1]  #dots <- (dotsperside+1)*(dotsperside+2)/2
   
   Seats=max(seats)
   
@@ -301,7 +328,7 @@ SpatialData <- function (dots, seats, step=1, threshold=0) {
 #presets
 seats=2:5;
 step=c(1,2); #(2 Sainte-Laguë 1 D'Hondt)
-dots=40000
+dotsperside=200 #dots <- (dotsperside+1)*(dotsperside+2)/2
 threshold=0
 ```
 
@@ -311,33 +338,35 @@ threshold=0
 ```r
 #Spatial data
 
-df = SpatialData(dots, seats, step)
+dots <- (dotsperside+1)*(dotsperside+2)/2
 
-#df = SpatialData(dots, 5, 1, threshold)
+df = SpatialData(dotsperside, seats, step)
 
-#df = SpatialData(dots, c(3,5,4), c(2,1), threshold)
+#df = SpatialData(dotsperside, 5, 1, threshold)
 
-dfT = SpatialData(dots, seats=5, threshold=.20)
+#df = SpatialData(dotsperside, c(3,5,4), c(2,1), threshold)
+
+dfT = SpatialData(dotsperside, seats=5, threshold=.20)
 
 
-head(df[[1]]) #sample data for step=1 and seats=5
+head(df[[1]][sample(1:dots,10,replace=F),]) #sample data for step=1 and seats=5
 ```
 
 ```
-##            x           y         z Sx Sy Sz Euclid Manhattan Uniform
-## 1 0.02647139 0.037817298 0.9357113  0  0  5      1         1       1
-## 2 0.23920635 0.347441978 0.4133517  1  2  2      9         9       9
-## 3 0.64415208 0.340707622 0.0151403  3  2  0     18        18      18
-## 4 0.45702407 0.097785702 0.4451902  3  0  2     13        13      13
-## 5 0.42131063 0.003676021 0.5750134  2  0  3     12        12      12
-## 6 0.10303280 0.756977745 0.1399895  0  5  0      5         5       5
-##   Malapportionment AllocOrderCode All2 All3 All4 Allocated
-## 1            FALSE            242    1    1    1         1
-## 2            FALSE            140    2    6    7         9
-## 3            FALSE             84    5    9   14        18
-## 4             TRUE             60    4    8   10        16
-## 5            FALSE            182    4    5   10        12
-## 6             TRUE            121    3    4    5         6
+##           x     y     z Sx Sy Sz Euclid Manhattan Uniform Malapportionment
+## 14335 0.460 0.140 0.400  3  0  2     13        13      13             TRUE
+## 11918 0.360 0.005 0.635  2  0  3     12        12      12            FALSE
+## 6841  0.185 0.345 0.470  1  2  2      9         9       9            FALSE
+## 10029 0.290 0.115 0.595  1  0  4      8         8       8             TRUE
+## 2198  0.055 0.205 0.740  0  1  4      2         2       2            FALSE
+## 18651 0.720 0.010 0.270  4  0  1     19        19      19            FALSE
+##       AllocOrderCode All2 All3 All4 Allocated
+## 14335             60    4    8   10        16
+## 11918             74    4    5    6        12
+## 6841             104    2    2    7         9
+## 10029            224    1    5    6         7
+## 2198             215    1    1    2         2
+## 18651             18    6    8   13        19
 ```
 
 **Regiones del Espacio Electoral**
@@ -396,15 +425,15 @@ Las distancias euclídea, Manhattan y uniforme producen regiones de Voronoi idé
 
 
 ```
-## [1] 1
+## [1] 0.9994089
 ```
 
 ```
-## [1] 1
+## [1] 0.9957145
 ```
 
 ```
-## [1] 1
+## [1] 0.99601
 ```
 
 **Tamaño de las regiones**
@@ -416,11 +445,11 @@ Las distancias euclídea, Manhattan y uniforme producen regiones de Voronoi idé
 ![](ElectoralSpace_files/figure-html/unnamed-chunk-21-1.png) 
 
 ```
-## [1] 0.365225
+## [1] 0.3653515
 ```
 
 ```
-## [1] 0.075875
+## [1] 0.07575981
 ```
 
 **Efecto del umbral sobre las regiones**

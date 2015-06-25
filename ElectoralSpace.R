@@ -102,7 +102,9 @@ alloc <- function(parties, votes, seats, step, threshold=0){
   
 }
 
-generateDots <- function(dots, method="cartesian"){
+generateDots <- function(dotsperside, method="lattice"){
+  
+  dots <- (dotsperside+1)*(dotsperside+2)/2
   
   if (method == "cartesian") {
     #Map Cartesian to Ternary to produce a homegeneous simulation
@@ -114,6 +116,30 @@ generateDots <- function(dots, method="cartesian"){
     #Ternary simulation. Projects points in[0,1]^3 to the sum(x)=1 hyperplane
     #This creates way more points in the center than in the extremes
     R = matrix(runif(3*dots), nrow=dots, ncol=3)
+    R = prop.table(R,1) #rows sum 1
+  }
+  
+  else if (method == "lattice") {
+    #lattice of dots
+    #if n is dotsperside
+    #dots <- (n+1)*(n+2)/2  but we need the inverse calculation
+    
+    #n <- floor((sqrt(8*dots+1)-3)/2) #exact
+    #n <- floor(sqrt(2*dots)) #aprox
+    
+    #we need to redefine dots
+    #dots <- (n+1)*(n+2)/2
+    R <- matrix(0,nrow=dots, ncol=3)
+    i <- 1
+    for (x in seq(0,1,1/dotsperside)){
+      
+      for (y in seq(0,1-x,1/dotsperside)){
+        
+        R[i,]<- c(x,y,1-x-y)
+        i <- i+1
+        
+      }
+    }
     R = prop.table(R,1) #rows sum 1
   }
   
@@ -167,11 +193,12 @@ AllocatedNode <- function (y, nodes, nnodes) {
   
 }
 
-SpatialData <- function (dots, seats, step=1, threshold=0) {
+SpatialData <- function (dotsperside, seats, step=1, threshold=0, method="lattice") {
   
   
   #Generate random electoral results
-  R <- generateDots(dots)
+  R <- generateDots(dotsperside, method=method)
+  dots=dim(R)[1]  #dots <- (dotsperside+1)*(dotsperside+2)/2
   
   Seats=max(seats)
   
@@ -380,21 +407,23 @@ alloc(letters[1:3], votes, 9, c(1,2), .05) #print seats sum and allocation
 #presets
 seats=2:5;
 step=c(1,2); #(2 Sainte-Laguë 1 D'Hondt)
-dots=40000
+dotsperside=200 #dots <- (dotsperside+1)*(dotsperside+2)/2
 threshold=0
 
 #Spatial data
 
-df = SpatialData(dots, seats, step)
+dots <- (dotsperside+1)*(dotsperside+2)/2
 
-#df = SpatialData(dots, 5, 1, threshold)
+df = SpatialData(dotsperside, seats, step)
 
-#df = SpatialData(dots, c(3,5,4), c(2,1), threshold)
+#df = SpatialData(dotsperside, 5, 1, threshold)
 
-dfT = SpatialData(dots, seats=5, threshold=.20)
+#df = SpatialData(dotsperside, c(3,5,4), c(2,1), threshold)
+
+dfT = SpatialData(dotsperside, seats=5, threshold=.20)
 
 
-head(df[[1]]) #sample data for step=1 and seats=5
+head(df[[1]][sample(1:dots,10,replace=F),]) #sample data for step=1 and seats=5
 
 
 

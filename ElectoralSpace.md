@@ -184,21 +184,23 @@ generateDots <- function(dotsperside, method="lattice"){
   
   else if (method == "lattice") {
     #lattice of dots
-    #if n is dotsperside
-    #dots <- (n+1)*(n+2)/2  but we need the inverse calculation
     
+    #read this if you want to use dots instead of dotsperside as input variable:
+    #if n is dotsperside
+    #dots <- (n+1)*(n+2)/2  
+    #inverse calculation:
     #n <- floor((sqrt(8*dots+1)-3)/2) #exact
     #n <- floor(sqrt(2*dots)) #aprox
     
-    #we need to redefine dots
+    #then redefine number of dots
     #dots <- (n+1)*(n+2)/2
     R <- matrix(0,nrow=dots, ncol=3)
     i <- 1
-    for (x in seq(0,1,1/dotsperside)){
+    for (x in 0:dotsperside){
       
-      for (y in seq(0,1-x,1/dotsperside)){
+      for (y in 0:(dotsperside-x)){
         
-        R[i,]<- c(x,y,1-x-y)
+        R[i,]<- c(x,y,dotsperside-x-y)
         i <- i+1
         
       }
@@ -328,7 +330,7 @@ SpatialData <- function (dotsperside, seats, step=1, threshold=0, method="lattic
 #presets
 seats=2:5;
 step=c(1,2); #(2 Sainte-Laguë 1 D'Hondt)
-dotsperside=200 #dots <- (dotsperside+1)*(dotsperside+2)/2
+dotsperside=199 #dots <- (dotsperside+1)*(dotsperside+2)/2
 threshold=0
 ```
 
@@ -353,20 +355,20 @@ head(df[[1]][sample(1:dots,10,replace=F),]) #sample data for step=1 and seats=5
 ```
 
 ```
-##           x     y     z Sx Sy Sz Euclid Manhattan Uniform Malapportionment
-## 14335 0.460 0.140 0.400  3  0  2     13        13      13             TRUE
-## 11918 0.360 0.005 0.635  2  0  3     12        12      12            FALSE
-## 6841  0.185 0.345 0.470  1  2  2      9         9       9            FALSE
-## 10029 0.290 0.115 0.595  1  0  4      8         8       8             TRUE
-## 2198  0.055 0.205 0.740  0  1  4      2         2       2            FALSE
-## 18651 0.720 0.010 0.270  4  0  1     19        19      19            FALSE
-##       AllocOrderCode All2 All3 All4 Allocated
-## 14335             60    4    8   10        16
-## 11918             74    4    5    6        12
-## 6841             104    2    2    7         9
-## 10029            224    1    5    6         7
-## 2198             215    1    1    2         2
-## 18651             18    6    8   13        19
+##                x          y          z Sx Sy Sz Euclid Manhattan Uniform
+## 14193 0.45728643 0.43718593 0.10552764  3  2  0     14        14      14
+## 11800 0.35678392 0.42211055 0.22110553  2  2  1     14        14      14
+## 6773  0.18592965 0.19095477 0.62311558  1  1  3      8         8       8
+## 9930  0.28643216 0.62814070 0.08542714  1  4  0     15        15      15
+## 2176  0.05527638 0.15075377 0.79396985  0  0  5      2         2       2
+## 18466 0.71859296 0.09045226 0.19095477  4  0  1     19        19      19
+##       Malapportionment AllocOrderCode All2 All3 All4 Allocated
+## 14193             TRUE             30    5    9   12        18
+## 11800            FALSE             46    5    6    8        14
+## 6773             FALSE             53    1    1    2         8
+## 9930              TRUE            112    3    7    9        11
+## 2176              TRUE            242    1    1    1         1
+## 18466            FALSE             54    6   10   13        19
 ```
 
 **Regiones del Espacio Electoral**
@@ -425,15 +427,15 @@ Las distancias euclídea, Manhattan y uniforme producen regiones de Voronoi idé
 
 
 ```
-## [1] 0.9994089
+## [1] 1
 ```
 
 ```
-## [1] 0.9957145
+## [1] 1
 ```
 
 ```
-## [1] 0.99601
+## [1] 1
 ```
 
 **Tamaño de las regiones**
@@ -445,11 +447,11 @@ Las distancias euclídea, Manhattan y uniforme producen regiones de Voronoi idé
 ![](ElectoralSpace_files/figure-html/unnamed-chunk-21-1.png) 
 
 ```
-## [1] 0.3653515
+## [1] 0.3691045
 ```
 
 ```
-## [1] 0.07575981
+## [1] 0.08014925
 ```
 
 **Efecto del umbral sobre las regiones**

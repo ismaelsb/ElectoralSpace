@@ -454,6 +454,12 @@ inputPanel(
 
 inputPanel(
   
+  checkboxGroupInput("ChoosePlots", "More plots:",
+                   c("Allocation" = "Qp",
+                     "Malapportionment" = "Mp",
+                     "Voronoi" = "Vp",
+                     "Ordering" = "Op"), selected = "Qp"),
+  
   selectInput("method", label = "Dot distribution:",
               choices = c("lattice","cartesian","ternary"), selected = "lattice"),
   
@@ -503,7 +509,7 @@ renderPlot({
   
   df = SpatialData(dotsperside=input$dotsperside-1, seats=input$seats, step=step, threshold=input$threshold, method=input$method) 
     
-  p1 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Allocated)))+
+  Qp <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Allocated)))+
   theme_bw()+
   geom_point(alpha=1)+
   geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
@@ -512,7 +518,7 @@ renderPlot({
   #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
   scale_colour_manual(values=generateColors(colorRGB0,input$seats),guide=FALSE,na.value="khaki2")
   
-  p2<- ggtern(data=df[[1]],aes(x,y,z,color=Malapportionment)) +
+  Mp <- ggtern(data=df[[1]],aes(x,y,z,color=Malapportionment)) +
   theme_rgbw() +
   geom_point(alpha=0.8) +
   geom_point(data=NodesData,aes(x,y,z),alpha=0.8,color="grey60")+
@@ -520,7 +526,7 @@ renderPlot({
   #scale_colour_grey(na.value = "black", guide = FALSE)
   scale_colour_brewer(palette = "YlGnBu", na.value = "grey60", guide = FALSE)
   
-  p3 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Manhattan)))+
+  Vp <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Manhattan)))+
   theme_bw()+
   geom_point(alpha=1)+
   geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
@@ -529,21 +535,32 @@ renderPlot({
   #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
   scale_colour_manual(values=generateColors(colorRGB0,input$seats), guide=FALSE, na.value="khaki2")
   
-  plist=list(p1,p2,p3)
-  ggtern.multi(plotlist=plist, cols=3)
+  Op <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(AllocOrderCode))) +
+  theme_bw()+
+  geom_point(alpha=1) +
+  geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
+  labs(x="X",y="Y",z="Z",title="Allocation Ordering")+
+  scale_colour_manual(values=
+      generateOrderColors(colorRGB0,input$seats,sort(unique(df[[1]]$AllocOrderCode))),guide=FALSE, na.value="khaki2")
+  
+  
+  plist=list(Qp,Mp,Vp,Op)
+  names(plist) <- c("Qp","Mp","Vp","Op")
+  ggtern.multi(plotlist=plist[input$ChoosePlots], cols=length(input$ChoosePlots))
 
     
-#size of the regions # 1 ~= dots/nnodes
-nnodes=(input$seats+1)*(input$seats+2)/2;
-RegionSizeQ  = table(df[[1]]$Allocated[1:dots])/(dots/nnodes)
-RegionSizeV  = table(df[[1]]$Manhattan[1:dots])/(dots/nnodes)
-
   
 })
 
-renderPlot({
+#renderPlot({
 
 
+#size of the regions # 1 ~= dots/nnodes
+#nnodes=(input$seats+1)*(input$seats+2)/2;
+#RegionSizeQ  = table(df[[1]]$Allocated[1:dots])/(dots/nnodes)
+#RegionSizeV  = table(df[[1]]$Manhattan[1:dots])/(dots/nnodes)
+
+  
 #par(mfrow=c(3,1))
 #plot(RegionSizeQ, main="Quotients region sizes")
 #plot(RegionSizeV, main="Voronoi region sizes" )
@@ -555,7 +572,7 @@ renderPlot({
   
 
   
-})
+#})
 
 ```
 

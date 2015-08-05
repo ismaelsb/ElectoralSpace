@@ -1,4 +1,33 @@
-# Electoral Space
+# Electoral Space. Geometric Visualizacion of Electoral Proportional Methods.
+
+In order to represent 3 variables in 2 dimensions in an only way for each set of proportional values we can use a ternary diagram. You can see this diagram as the projection of the points from the positive quadrant in space onto the hyperplane of points whose sum of coodinates equals 1. The image of this projection is an equilateral triangle. In the same way we can represent two values in a segment and four values in a tetrahedron. This representation is also known by the name of barycentric coordinates in a simplex.
+ 
+A diagram like these can be used to represent the results in political elections in which the votes are shared between 3 parties. Each point in the triangle is represented by three coordinates corresponding the share of votes received by each party. We have a determined number of seats to allocate, and each posible sharing is represented by a highlighted dot (a node) in the triangle and a label with its result. The electoral method would allocate to each electoral result one of the possible sharings of seats. The regions of points to which the same sharing is allocated are represented in the same color. For two parties we'd use a segment. For four, a tetrahedron. The diagram is usefull for visualizing possible seats at stake when the results are close to the borders between two or more regions.
+
+We use a function for electoral allocation for different proportional methods and an optional entry threshold.
+
+We also show some of the functions used to compute allocations or to plot the diagrams.
+
+The regions created by D'Hondt method aren't the same as the Voronoi regions created by the lattice of nodes. This method allocates more than 60% of the points correctly. Sainte-Laguë method is, in more than 90% of the points, similar to Voronoi. In D'Hondt the sizes of the regions are similar, but Sainte-Laguë produces regions centered on the nodes. Voronoi regions would be obtained by a method always allocating the nearest node. Those regions are similar if we use Euclidean, Manhattan or uniform distance. A Voronoi allocation method should solve the ties between two or more parties when the result is in a border in the same way the quotients methods do (by the total number of votes, and if the tie persists, at random).
+
+Quotients method produce regions with borders in angular sections. Voronoi borders are given by segment sections.
+
+We study here not only the result of allocation, but also the ordering in the allocation, and so we plot a diagram for the regions of different allocation orderings in the Electoral Space as subregions of the allocation ones.
+This diagram visualizes in a remarkable way the geometry of the Electoral Space.
+
+We can also draw historic data from past elections on the diagrams.
+
+In http://rpubs.com/ismaelsb/ElectoralSpace and https://github.com/ismaelsb/ElectoralSpace/blob/master/ElectoralSpace.md we present the results.
+
+The code used for these computations and representations is available here: https://github.com/ismaelsb/ElectoralSpace/blob/master/ElectoralSpace.R
+
+The results have been generated in HTML by this R Markdown code: https://github.com/ismaelsb/ElectoralSpace/blob/master/ElectoralSpace.Rmd
+
+An interactive web app is available here: https://ismaelsb.shinyapps.io/ElectoralSpace
+
+
+
+
 
 Para representar 3 variables en 2 dimensiones de forma única para cada conjunto de valores proporcionales se puede utilizar un diagrama ternario. Se puede entender el diagrama como la proyección de los puntos del cuadrante positivo del espacio en el hiperplano cuya suma de coordenadas es 1. La imagen de la proyección es un triángulo equilátero. De la misma manera podemos representar dos valores en un segmento o cuatro valores en un tetraedro. Esta representación también se conoce con el nombre de coordenadas baricéntricas en un símplice.
 

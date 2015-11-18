@@ -367,6 +367,17 @@ generateSpline <- function (dfvotes, method = "natural") {
   
 }
 
+modifiedlog <- function(x) {
+  
+  #modified log function for the calculation of entropy
+  #avoids log(0)=NaN
+  
+  x <- as.matrix(x)
+  r<-log(x)
+  r[is.finite(r)==F] <-0
+  return(r)
+  
+}
 
 
 #plot example
@@ -398,7 +409,7 @@ ggtern(data=NodesData,aes(x,y,z,color=as.factor(index)))+
   scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
 
 
-#Allocation example (step=2 Sainte-Laguë; step=1 D'Hondt)
+#Allocation example (step=2 Sainte-Lagu?; step=1 D'Hondt)
 votes <- sample(1:1000, 3) 
 votes
 #alloc(letters[1:3], votes, seats=5, step=1)
@@ -408,7 +419,7 @@ alloc(letters[1:3], votes, 9, c(1,2), .05) #print seats sum and allocation
 
 #presets
 seats=2:5;
-step=c(1,2); #(2 Sainte-Laguë 1 D'Hondt)
+step=c(1,2); #(2 Sainte-Lagu? 1 D'Hondt)
 dotsperside=199 #dots <- (dotsperside+1)*(dotsperside+2)/2
 threshold=0
 
@@ -445,7 +456,7 @@ a2 <- ggtern(data=df[[2]],aes(x,y,z,color=as.factor(Allocated)))+
   geom_point(alpha=1)+
   geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
   geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
-  labs(x="X",y="Y",z="Z",title="Sainte-Laguë Allocation")+
+  labs(x="X",y="Y",z="Z",title="Sainte-Lagu? Allocation")+
   #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
   scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
 
@@ -476,7 +487,7 @@ RegionSize2 = table(df[[2]]$Allocated[1:dots])/(dots/nnodes)
 
 par(mfrow=c(2,1))
 plot(RegionSize, main="D'Hondt region sizes")
-plot(RegionSize2,main="Sainte-Laguë region sizes" )
+plot(RegionSize2,main="Sainte-Lagu? region sizes" )
 par(mfrow=c(1,1))
 
 
@@ -493,14 +504,14 @@ m2 <- ggtern(data=df[[2]],aes(x,y,z,color=Malapportionment)) +
   theme_rgbw() +
   geom_point(alpha=0.8) +
   geom_point(data=NodesData,aes(x,y,z),alpha=0.8,color="grey60")+
-  labs(x="X",y="Y",z="Z",title="Sainte-Laguë Malapportionment")+
+  labs(x="X",y="Y",z="Z",title="Sainte-Lagu? Malapportionment")+
   scale_colour_brewer(palette = "YlGnBu", na.value = "grey60", guide = FALSE)
 
 ggtern.multi(m1, m2, cols=2)
 
 #points not allocated by D'Hondt in their corresponding Voronoi region
 sum(df[[1]]$Malapportionment[1:dots])/dots
-#points not allocated by Sainte-Laguë in their corresponding Voronoi region
+#points not allocated by Sainte-Lagu? in their corresponding Voronoi region
 sum(df[[2]]$Malapportionment[1:dots])/dots
 
 #Threshold effect
@@ -558,19 +569,19 @@ p3 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(df[[1]]$All4)))+
 p4 <- ggtern(data=df[[2]],aes(x,y,z,color=as.factor(df[[2]]$All2)))+
   theme_bw()+
   geom_point(alpha=1)+
-  labs(x="X",y="Y",z="Z",title="Sainte-Laguë, 2 seats")+
+  labs(x="X",y="Y",z="Z",title="Sainte-Lagu?, 2 seats")+
   scale_colour_manual(values=generateColors(colorRGB0,2), guide=FALSE)
 
 p5 <- ggtern(data=df[[2]],aes(x,y,z,color=as.factor(df[[2]]$All3)))+
   theme_bw()+
   geom_point(alpha=1)+
-  labs(x="X",y="Y",z="Z",title="Sainte-Laguë, 3 seats")+
+  labs(x="X",y="Y",z="Z",title="Sainte-Lagu?, 3 seats")+
   scale_colour_manual(values=generateColors(colorRGB0,3), guide=FALSE)
 
 p6 <- ggtern(data=df[[2]],aes(x,y,z,color=as.factor(df[[2]]$All4)))+
   theme_bw()+
   geom_point(alpha=1)+
-  labs(x="X",y="Y",z="Z",title="Sainte-Laguë, 4 seats")+
+  labs(x="X",y="Y",z="Z",title="Sainte-Lagu?, 4 seats")+
   scale_colour_manual(values=generateColors(colorRGB0,4), guide=FALSE)
 
 plist=list(p1,p4,p2,p5,p3,p6)
@@ -644,5 +655,65 @@ print(fit)
 fit$coefs
 fit$terms
 fit$fitted
+
+
+#Entropy
+Seats <- length(seats)
+df[[1]][,11+Seats+1] <- rowSums(-df[[1]][,1:3]*modifiedlog(df[[1]][,1:3]))
+df[[1]][,11+Seats+2] <- rowSums(-df[[1]][,4:6]/max(seats)*modifiedlog(df[[1]][,4:6]/max(seats)))
+
+#Effective number of parties
+df[[1]][,11+Seats+3] <- 1/rowSums((df[[1]][,1:3])^2)
+df[[1]][,11+Seats+4] <- 1/rowSums((df[[1]][,4:6]/max(seats))^2)
+
+names(df[[1]])[(11+Seats+1):(11+Seats+4)] <- c('Entropy','CameraEntropy','Parties','CameraParties')
+
+
+e1 <- ggtern(data=df[[1]],aes(x,y,z,color=Entropy))+
+  theme_bw()+
+  geom_point(alpha=1)+
+  #geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
+  #geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
+  labs(x="X",y="Y",z="Z",title="Votes Entropy")+
+  #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+  #scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
+  scale_colour_gradient2(low='brown3', mid="aquamarine3", high='black', midpoint=log(2), na.value = "grey50", guide = "colourbar")
+
+e2 <- ggtern(data=df[[1]],aes(x,y,z,color=CameraEntropy))+
+  theme_bw()+
+  geom_point(alpha=1)+
+  geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
+  geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
+  labs(x="X",y="Y",z="Z",title="Camera Entropy")+
+  #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+  #scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
+  scale_colour_gradient2(low='brown3', mid="aquamarine3", high='black', midpoint=log(2), na.value = "grey50", guide = "colourbar")
+
+ggtern.multi(e1, e2, cols=2)
+
+
+n1 <- ggtern(data=df[[1]],aes(x,y,z,color=Parties))+
+  theme_bw()+
+  geom_point(alpha=1)+
+  #geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
+  #geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
+  labs(x="X",y="Y",z="Z",title="Eff. num Parties")+
+  #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+  #scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
+  scale_colour_gradient2(low='brown3', mid="aquamarine3", high='black', midpoint=2, na.value = "grey50", guide = "colourbar")
+
+n2 <- ggtern(data=df[[1]],aes(x,y,z,color=CameraParties))+
+  theme_bw()+
+  geom_point(alpha=1)+
+  #geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
+  #geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
+  labs(x="X",y="Y",z="Z",title="Eff. num Parties")+
+  #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+  #scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
+  scale_colour_gradient2(low='brown3', mid="aquamarine3", high='black', midpoint=2, na.value = "grey50", guide = "colourbar")
+
+ggtern.multi(n1, n2, cols=2)
+
+ggtern.multi(e1, e2, n1, n2, cols=2)
 
 

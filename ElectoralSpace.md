@@ -520,3 +520,10 @@ ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Allocated)))+
 ```
 
 ![](ElectoralSpace_files/figure-html/unnamed-chunk-29-1.png) 
+
+**Medidas de diversidad: entropía y número efectivo de partidos**
+
+Los siguientes diagramas muestran la dispersión de los votos y de la cámara de representantes con distintos índices de diversidad: la entropía de Shannon y el número efectivo de partidos de  Laakso-Taagepera.
+
+![](ElectoralSpace_files/figure-html/unnamed-chunk-30-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-30-2.png) 
+

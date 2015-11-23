@@ -668,6 +668,7 @@ df[[1]][,11+Seats+4] <- 1/rowSums((df[[1]][,4:6]/max(seats))^2)
 
 names(df[[1]])[(11+Seats+1):(11+Seats+4)] <- c('Entropy','CameraEntropy','Parties','CameraParties')
 
+options(warn=-1) 
 
 e1 <- ggtern(data=df[[1]],aes(x,y,z,color=Entropy))+
   theme_bw()+
@@ -682,8 +683,8 @@ e1 <- ggtern(data=df[[1]],aes(x,y,z,color=Entropy))+
 e2 <- ggtern(data=df[[1]],aes(x,y,z,color=CameraEntropy))+
   theme_bw()+
   geom_point(alpha=1)+
-  geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
-  geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
+  #geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
+  #geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
   labs(x="X",y="Y",z="Z",title="Camera Entropy")+
   #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
   #scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
@@ -697,7 +698,7 @@ n1 <- ggtern(data=df[[1]],aes(x,y,z,color=Parties))+
   geom_point(alpha=1)+
   #geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
   #geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
-  labs(x="X",y="Y",z="Z",title="Eff. num Parties")+
+  labs(x="X",y="Y",z="Z",title="Eff. num of parties")+
   #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
   #scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
   scale_colour_gradient2(low='brown3', mid="aquamarine3", high='black', midpoint=2, na.value = "grey50", guide = "colourbar")
@@ -707,7 +708,7 @@ n2 <- ggtern(data=df[[1]],aes(x,y,z,color=CameraParties))+
   geom_point(alpha=1)+
   #geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
   #geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
-  labs(x="X",y="Y",z="Z",title="Eff. num Parties")+
+  labs(x="X",y="Y",z="Z",title="Eff. num of parties")+
   #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
   #scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
   scale_colour_gradient2(low='brown3', mid="aquamarine3", high='black', midpoint=2, na.value = "grey50", guide = "colourbar")

@@ -1,27 +1,27 @@
 # Electoral Space
 
-## Visualización geométrica de los métodos electorales proporcionales.
+## Geometric visualization for proportional electoral methodes.
 
-Código disponible en <https://github.com/ismaelsb/ElectoralSpace>
+Code available here: <https://github.com/ismaelsb/ElectoralSpace>
  
-Aplicación web interactiva: <https://ismaelsb.shinyapps.io/ElectoralSpace>
+Interactive web app: <https://ismaelsb.shinyapps.io/ElectoralSpace>
 
-**Introducción**
+**Introduction**
 
-Para representar 3 variables en 2 dimensiones de forma única para cada conjunto de valores proporcionales se puede utilizar un diagrama ternario. Se puede entender el diagrama como la proyección de los puntos del cuadrante positivo del espacio en el hiperplano cuya suma de coordenadas es 1. La imagen de la proyección es un triángulo equilátero. De la misma manera podemos representar dos valores en un segmento o cuatro valores en un tetraedro. Esta representación también se conoce con el nombre de coordenadas baricéntricas en un símplice.
+In order to represent 3 variables in 2 dimensions in an only way for each set of proportional values, we can use a ternary diagram. You can see this diagram as the projection of the points from the positive quadrant in space onto the hyperplane of points whose sum of coodinates equals 1. The image of this projection is an equilateral triangle. In the same way we can represent two values in a segment and four values in a tetrahedron. This representation is also known by the name of barycentric coordinates in a simplex.
 
 
 
 ![](ElectoralSpace_files/figure-html/unnamed-chunk-2-1.png) 
 
 
-**Funciones de asignación electoral (más en el código)**
+**Electoral allocation functions (more in the code)**
 
-Un diagrama como éste se puede usar para representar el resultado de unas elecciones en las que los votos se reparten entre 3 partidos. Cada punto del triángulo se representa con tres coordenadas que se corresponden con el porcentaje de voto obtenido por cada partido. Tenemos un número de escaños a repartir y cada posible reparto se representa con un punto resaltado (nodo) en el triángulo con su correspondiente resultado. El método electoral asignará a cada resultado electoral uno de los posibles repartos de escaños. Las regiones de puntos a las que le son asignados un mismo reparto serán representadas con un mismo color. Para dos partidos usaríamos un segmento y para cuatro, un tetraedro. El diagrama es útil para visualizar los posibles escaños en juego cuando el resultado está muy ajustado y próximo a la frontera entre dos o más regiones.
+A diagram like these can be used to represent the results in political elections in which the votes are shared between 3 parties. Each point in the triangle is represented by three coordinates corresponding the share of votes received by each party. We have a determined number of seats to allocate, and each posible sharing is represented by a highlighted dot (a node) in the triangle and a label with its result. The electoral method would allocate to each electoral result one of the possible sharings of seats. The regions of points to which the same sharing is allocated are represented in the same color. For two parties we'd use a segment. For four, a tetrahedron. The diagram is usefull for visualizing possible seats at stake when the results are close to the borders between two or more regions.
 
-Utilizamos una función de asignación electoral para distintos métodos proporcionales de cocientes con la posibilidad de añadir un umbral de entrada. 
+We use a function for electoral allocation for different proportional methods and an optional entry threshold.
 
-Mostramos algunas de las funciones utilizadas para calcular la asignación y generar los diagramas:
+We also show some of the functions used to compute allocations or to plot the diagrams.
 
 
 
@@ -106,7 +106,7 @@ alloc <- function(parties, votes, seats, step, threshold=0){
 }
 ```
 
-**Ejemplo de asignación**
+**Examples of allocation**
 
 
 ```r
@@ -233,7 +233,7 @@ ManhattanNearest <- function (x, seats, nodes, nnodes) {
 
 
 
-**Matriz de datos (más en el código)**
+**Data frame (more in the code)**
 
 
 ```r
@@ -324,7 +324,7 @@ SpatialData <- function (dotsperside, seats, step=1, threshold=0, method="lattic
 }
 ```
 
-**Configuración**
+**Settings**
 
 
 ```r
@@ -335,7 +335,7 @@ dotsperside=199 #dots <- (dotsperside+1)*(dotsperside+2)/2
 threshold=0
 ```
 
-**Generando los datos**
+**Generating the data**
 
 
 ```r
@@ -372,13 +372,14 @@ head(df[[1]][sample(1:dots,10,replace=F),]) #sample data for step=1 and seats=5
 ## 18466            FALSE             54    6   10   13        19
 ```
 
-**Regiones del Espacio Electoral**
+**Electoral Space regions**
 
-Las regiones creadas por el reparto de D'Hondt no se corresponden con las regiones de Voronoi de los nodos. Este método asigna correctamente más del 60% de los puntos. El reparto de Sainte-Laguë se aproxima en más de un 90% a las regiones de Voronoi sin llegar a ser igual. Con D'Hondt el tamaño de las distintas regiones es similar, mientras para Sainte-Laguë los nodos se encuentran en el centro de ellas. Obtendríamos las regiones de Voronoi si a cada punto se le asignara el nodo más próximo. Para este tipo de reparto se obtienen los mismos resultados si utilizamos la distancia Euclídea, Manhattan o la uniforme. Como detalle, el cálculo para la asignación de Voronoi debería resolver un empate entre dos o más partidos cuando el resultado electoral se situa exactamente en la frontera entre dos o más regiones contiguas, del mismo modo que los métodos de cocientes resuelve los empates de cocientes (con el número de votos total y al azar en caso de nuevo empate).
+The regions created by D'Hondt method aren't the same as the Voronoi regions created by the lattice of nodes. This method allocates more than 60% of the points correctly whereas Sainte-Laguë method is, in more than 90% of the points, similar to Voronoi. In D'Hondt the sizes of the regions are similar, but Sainte-Laguë produces regions centered on the nodes. Voronoi regions would be obtained by a method always allocating the nearest node. Those regions are similar if we use Euclidean, Manhattan or uniform distance. A Voronoi allocation method should solve the ties between two or more parties when the result is in a border in the same way the quotients methods do (by the total number of votes, and if the tie persists, at random).
 
-Los métodos de cocientes producen regiones con fronteras dadas por sectores angulares mientras que la asignación de Voronoi produce regiones dadas por sectores de segmentos.
+Quotients method produce regions with borders in angular sections. Voronoi borders are given by segment sections.
 
-Se estudia aquí la asignación no sólo en resultado, sino también en el orden de reparto de los escaños, y se dibujan diagramas que muestran las regiones del Espacio Electoral divididas en subregiones para cada posible ordenación de la asignación. El diagrama de las subregiones visibiliza de manera bastante destacable la geometría de las regiones electorales.
+We study here not only the result of allocation, but also the ordering in the allocation, and so we plot a diagram for the regions of different allocation orderings in the Electoral Space as subregions of the allocation ones.
+This diagram visualizes in a remarkable way the geometry of the Electoral Space.
 
 
 ```r
@@ -424,14 +425,10 @@ ggtern.multi(a2, a3, cols=2)
 
 ![](ElectoralSpace_files/figure-html/unnamed-chunk-18-2.png) 
 
-**Comparación de las regiones de Voronoi sobre distintas métricas**
+**Comparing Voronoi regions over different metrics**
 
-Las distancias euclídea, Manhattan y uniforme producen regiones de Voronoi idénticas:
+Euclid, Manhattan and Uniform distances produce exactly the same Voronoi regions:
 
-
-```
-## [1] 1
-```
 
 ```
 ## [1] 1
@@ -441,11 +438,15 @@ Las distancias euclídea, Manhattan y uniforme producen regiones de Voronoi idé
 ## [1] 1
 ```
 
-**Tamaño de las regiones**
+```
+## [1] 1
+```
+
+**Size of the regions**
 
 ![](ElectoralSpace_files/figure-html/unnamed-chunk-20-1.png) 
 
-**Proporción de resultados no asignados al nodo más cercano**
+**Proportion of results not allocated to the nearest node**
 
 ![](ElectoralSpace_files/figure-html/unnamed-chunk-21-1.png) 
 
@@ -457,23 +458,23 @@ Las distancias euclídea, Manhattan y uniforme producen regiones de Voronoi idé
 ## [1] 0.08014925
 ```
 
-**Efecto del umbral sobre las regiones**
+**Effect of a threshold on the regions**
 
 ![](ElectoralSpace_files/figure-html/unnamed-chunk-22-1.png) 
 
-**Regiones para las distintas ordenaciones en la asignación**
+**Regions for different orderings in the allocation**
 
 
 
 ![](ElectoralSpace_files/figure-html/unnamed-chunk-24-1.png) 
 
-**Sumas parciales en la asignación**
+**Partial sums in the allocation**
 
 ![](ElectoralSpace_files/figure-html/unnamed-chunk-25-1.png) 
 
-**Historia de las electiones**
+**History of elections**
 
-Podemos también representar datos históricos o geográficos de varias elecciones sobre el diagrama.
+We can also draw historic data from past elections on the diagrams.
 
 
 
@@ -521,9 +522,9 @@ ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Allocated)))+
 
 ![](ElectoralSpace_files/figure-html/unnamed-chunk-29-1.png) 
 
-**Medidas de diversidad: entropía y número efectivo de partidos**
+**Diversity measures: entropy and effective number of parties**
 
-Los siguientes diagramas muestran la dispersión de los votos y de la cámara de representantes con distintos índices de diversidad: la entropía de Shannon y el número efectivo de partidos de  Laakso-Taagepera.
+The diagrams below show vote disperion an camera dispersion measured with different diversity indexes: Shannon entropy and Laakso-Taagepera effective number of parties.
 
 ![](ElectoralSpace_files/figure-html/unnamed-chunk-30-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-30-2.png) 
 

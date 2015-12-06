@@ -271,6 +271,22 @@ CartesianToTernary <- function (x) {
 
 ```{r, echo = F}
 
+normalizenodes <- function (nodes) {
+  
+  normnodes <- nodes
+  for (i in 1:dim(nodes)[1]){
+    normnodes[i,] <- nodes[i,]/norm(as.matrix(nodes[i,]),"F")
+  }
+  
+  normnodes <- as.matrix(normnodes)
+  
+}
+
+
+```
+
+```{r, echo = F}
+
 UniformNearest <- function (x, seats, nodes, nnodes) {
   
   Uniform = which.min(apply(abs(nodes/seats - rep(1,nnodes) %*% t(x)),1,max))
@@ -300,6 +316,19 @@ EuclidNearest <- function (x, seats, nodes, nnodes) {
   Euclid = which.min(apply((nodes/seats - rep(1,nnodes) %*% t(x))^2,1,sum))
   
   return(Euclid);
+  
+}
+
+```
+
+```{r, echo = T}
+
+OrthodromicNearest <- function (x, seats, nodes, nnodes) {
+  
+  normnodes <- normalizenodes(nodes)
+  Orthodromic = which.min(acos((x/norm(t(x),"F")) %*% t(as.matrix(normnodes))))
+  
+  return(Orthodromic);
   
 }
 
@@ -338,6 +367,8 @@ SpatialData <- function (dotsperside, seats, step=1, threshold=0, method="lattic
   Uniform   = apply(R, 1, UniformNearest,   seats=Seats, nodes = nodes, nnodes=nnodes)
   Manhattan = apply(R, 1, ManhattanNearest, seats=Seats, nodes = nodes, nnodes=nnodes)
   Euclid    = apply(R, 1, EuclidNearest,    seats=Seats, nodes = nodes, nnodes=nnodes)
+  Orthodromic=apply(R, 1, OrthodromicNearest,seats=Seats,nodes = nodes, nnodes=nnodes)
+  
   
   #allocate seats
   AllocStructure <- apply(R, 1, function(x) alloc(as.character(1:3), x, seats, step, threshold))
@@ -388,8 +419,10 @@ SpatialData <- function (dotsperside, seats, step=1, threshold=0, method="lattic
       Euclid,
       Manhattan,
       Uniform,
+      Orthodromic,
       
       Malapportionment = AllocPartial[1:dots,length(seats)] != Euclid[1:dots],
+      Malapportionment2 = AllocPartial[1:dots,length(seats)] != Orthodromic[1:dots],
       
       AllocOrderCode
       
@@ -475,9 +508,14 @@ a2 <- ggtern(data=df[[2]],aes(x,y,z,color=as.factor(Allocated)))+
 
 ggtern.multi(a1, a2, cols=2)
 
+
+```
+
+```{r, echo = F}
+
 #Voronoi
 
-a3 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Manhattan)))+
+v1 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Manhattan)))+
   theme_bw()+
   geom_point(alpha=1)+
   geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
@@ -486,14 +524,25 @@ a3 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Manhattan)))+
   #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
   scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
 
-ggtern.multi(a2, a3, cols=2)
+#Orthodromic Voronoi
 
+v2 <- ggtern(data=df[[2]],aes(x,y,z,color=as.factor(Orthodromic)))+
+  theme_bw()+
+  geom_point(alpha=1)+
+  geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
+  geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
+  labs(x="X",y="Y",z="Z",title="Orthodromic Voronoi Allocation")+
+  #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+  scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
+
+ggtern.multi(a2, v1, cols=2)
+ggtern.multi(a2, v2, cols=2)
 
 ```
 
 **Comparing Voronoi regions over different metrics**
 
-Euclid, Manhattan and Uniform distances produce exactly the same Voronoi regions:
+Euclid, Manhattan and Uniform distances produce exactly the same Voronoi regions. Orthodromic distance on the unit sphere produces different regions:
 
 ```{r, echo = F}
 
@@ -502,11 +551,23 @@ sum(df[[1]]$Euclid[1:dots]==df[[1]]$Manhattan[1:dots])/dots
 sum(df[[1]]$Uniform[1:dots]==df[[1]]$Manhattan[1:dots])/dots
 sum(df[[1]]$Uniform[1:dots]==df[[1]]$Euclid[1:dots])/dots
 
+#Differences between planar and orthodromic Voronoi regions
+sum(df[[1]]$Euclid[1:dots]==df[[1]]$Orthodromic[1:dots])/dots
+
+ggtern(data=df[[1]],aes(x,y,z,color=Malapportionment!=Malapportionment2)) +
+  theme_rgbw() +
+  geom_point(alpha=0.8) +
+  geom_point(data=NodesData,aes(x,y,z),alpha=0.8,color="grey30")+
+  labs(x="X",y="Y",z="Z",title="Planar vs Orthodromic regions")+
+  #scale_colour_grey(na.value = "black", guide = FALSE)
+  scale_colour_brewer(palette = "Greys", na.value = "grey60", guide = FALSE)
+
 ```
 
 **Size of the regions**
 
 ```{r, echo = F}
+
 #size of the regions # 1 ~= dots/nnodes
 nnodes=(max(seats)+1)*(max(seats)+2)/2;
 RegionSize  = table(df[[1]]$Allocated[1:dots])/(dots/nnodes)
@@ -541,10 +602,34 @@ m2 <- ggtern(data=df[[2]],aes(x,y,z,color=Malapportionment)) +
 
 ggtern.multi(m1, m2, cols=2)
 
+#orthodromic malapportionment
+om1 <- ggtern(data=df[[1]],aes(x,y,z,color=Malapportionment2)) +
+  theme_rgbw() +
+  geom_point(alpha=0.8) +
+  geom_point(data=NodesData,aes(x,y,z),alpha=0.8,color="grey60")+
+  labs(x="X",y="Y",z="Z",title="D'Hondt Malapportionment (Orthodromic)")+
+  #scale_colour_grey(na.value = "black", guide = FALSE)
+  scale_colour_brewer(palette = "YlGnBu", na.value = "grey60", guide = FALSE)
+
+om2 <- ggtern(data=df[[2]],aes(x,y,z,color=Malapportionment2)) +
+  theme_rgbw() +
+  geom_point(alpha=0.8) +
+  geom_point(data=NodesData,aes(x,y,z),alpha=0.8,color="grey60")+
+  labs(x="X",y="Y",z="Z",title="Sainte-Laguë Malapportionment (Orthodromic)")+
+  #scale_colour_grey(na.value = "black", guide = FALSE)
+  scale_colour_brewer(palette = "YlGnBu", na.value = "grey60", guide = FALSE)
+
+ggtern.multi(om1, om2, cols=2)
+
 #points not allocated by D'Hondt in their corresponding Voronoi region
 sum(df[[1]]$Malapportionment[1:dots])/dots
-#points not allocated by Sainte-Laguë in their corresponding Voronoi region
+#points not allocated by Sainte-Lagu? in their corresponding Voronoi region
 sum(df[[2]]$Malapportionment[1:dots])/dots
+
+#points not allocated by D'Hondt in their corresponding orthodromic Voronoi region
+sum(df[[1]]$Malapportionment2[1:dots])/dots
+#points not allocated by Sainte-Laguë in their corresponding orthodromic Voronoi region
+sum(df[[2]]$Malapportionment2[1:dots])/dots
 
 ```
 

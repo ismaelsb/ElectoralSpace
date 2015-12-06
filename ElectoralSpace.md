@@ -219,6 +219,8 @@ generateDots <- function(dotsperside, method="lattice"){
 
 
 
+
+
 ```r
 ManhattanNearest <- function (x, seats, nodes, nnodes) {
   
@@ -230,6 +232,18 @@ ManhattanNearest <- function (x, seats, nodes, nnodes) {
 ```
 
 
+
+
+```r
+OrthodromicNearest <- function (x, seats, nodes, nnodes) {
+  
+  normnodes <- normalizenodes(nodes)
+  Orthodromic = which.min(acos((x/norm(t(x),"F")) %*% t(as.matrix(normnodes))))
+  
+  return(Orthodromic);
+  
+}
+```
 
 
 
@@ -254,6 +268,8 @@ SpatialData <- function (dotsperside, seats, step=1, threshold=0, method="lattic
   Uniform   = apply(R, 1, UniformNearest,   seats=Seats, nodes = nodes, nnodes=nnodes)
   Manhattan = apply(R, 1, ManhattanNearest, seats=Seats, nodes = nodes, nnodes=nnodes)
   Euclid    = apply(R, 1, EuclidNearest,    seats=Seats, nodes = nodes, nnodes=nnodes)
+  Orthodromic=apply(R, 1, OrthodromicNearest,seats=Seats,nodes = nodes, nnodes=nnodes)
+  
   
   #allocate seats
   AllocStructure <- apply(R, 1, function(x) alloc(as.character(1:3), x, seats, step, threshold))
@@ -304,8 +320,10 @@ SpatialData <- function (dotsperside, seats, step=1, threshold=0, method="lattic
       Euclid,
       Manhattan,
       Uniform,
+      Orthodromic,
       
       Malapportionment = AllocPartial[1:dots,length(seats)] != Euclid[1:dots],
+      Malapportionment2 = AllocPartial[1:dots,length(seats)] != Orthodromic[1:dots],
       
       AllocOrderCode
       
@@ -363,13 +381,20 @@ head(df[[1]][sample(1:dots,10,replace=F),]) #sample data for step=1 and seats=5
 ## 9930  0.28643216 0.62814070 0.08542714  1  4  0     15        15      15
 ## 2176  0.05527638 0.15075377 0.79396985  0  0  5      2         2       2
 ## 18466 0.71859296 0.09045226 0.19095477  4  0  1     19        19      19
-##       Malapportionment AllocOrderCode All2 All3 All4 Allocated
-## 14193             TRUE             30    5    9   12        18
-## 11800            FALSE             46    5    6    8        14
-## 6773             FALSE             53    1    1    2         8
-## 9930              TRUE            112    3    7    9        11
-## 2176              TRUE            242    1    1    1         1
-## 18466            FALSE             54    6   10   13        19
+##       Orthodromic Malapportionment Malapportionment2 AllocOrderCode All2
+## 14193          14             TRUE              TRUE             30    5
+## 11800          14            FALSE             FALSE             46    5
+## 6773            8            FALSE             FALSE             53    1
+## 9930           15             TRUE              TRUE            112    3
+## 2176            2             TRUE              TRUE            242    1
+## 18466          19            FALSE             FALSE             54    6
+##       All3 All4 Allocated
+## 14193    9   12        18
+## 11800    6    8        14
+## 6773     1    2         8
+## 9930     7    9        11
+## 2176     1    1         1
+## 18466   10   13        19
 ```
 
 **Electoral Space regions**
@@ -406,28 +431,13 @@ a2 <- ggtern(data=df[[2]],aes(x,y,z,color=as.factor(Allocated)))+
 ggtern.multi(a1, a2, cols=2)
 ```
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-18-1.png) 
+![](ElectoralSpace_files/figure-html/unnamed-chunk-20-1.png) 
 
-```r
-#Voronoi
-
-a3 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Manhattan)))+
-  theme_bw()+
-  geom_point(alpha=1)+
-  geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
-  geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
-  labs(x="X",y="Y",z="Z",title="Voronoi Allocation")+
-  #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
-  scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
-
-ggtern.multi(a2, a3, cols=2)
-```
-
-![](ElectoralSpace_files/figure-html/unnamed-chunk-18-2.png) 
+![](ElectoralSpace_files/figure-html/unnamed-chunk-21-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-21-2.png) 
 
 **Comparing Voronoi regions over different metrics**
 
-Euclid, Manhattan and Uniform distances produce exactly the same Voronoi regions:
+Euclid, Manhattan and Uniform distances produce exactly the same Voronoi regions. Orthodromic distance on the unit sphere produces different regions:
 
 
 ```
@@ -441,14 +451,20 @@ Euclid, Manhattan and Uniform distances produce exactly the same Voronoi regions
 ```
 ## [1] 1
 ```
+
+```
+## [1] 0.9146269
+```
+
+![](ElectoralSpace_files/figure-html/unnamed-chunk-22-1.png) 
 
 **Size of the regions**
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-20-1.png) 
+![](ElectoralSpace_files/figure-html/unnamed-chunk-23-1.png) 
 
 **Proportion of results not allocated to the nearest node**
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-21-1.png) 
+![](ElectoralSpace_files/figure-html/unnamed-chunk-24-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-24-2.png) 
 
 ```
 ## [1] 0.3691045
@@ -458,19 +474,27 @@ Euclid, Manhattan and Uniform distances produce exactly the same Voronoi regions
 ## [1] 0.08014925
 ```
 
+```
+## [1] 0.2856219
+```
+
+```
+## [1] 0.08333333
+```
+
 **Effect of a threshold on the regions**
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-22-1.png) 
+![](ElectoralSpace_files/figure-html/unnamed-chunk-25-1.png) 
 
 **Regions for different orderings in the allocation**
 
 
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-24-1.png) 
+![](ElectoralSpace_files/figure-html/unnamed-chunk-27-1.png) 
 
 **Partial sums in the allocation**
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-25-1.png) 
+![](ElectoralSpace_files/figure-html/unnamed-chunk-28-1.png) 
 
 **History of elections**
 
@@ -520,11 +544,11 @@ ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Allocated)))+
   scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
 ```
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-29-1.png) 
+![](ElectoralSpace_files/figure-html/unnamed-chunk-32-1.png) 
 
 **Diversity measures: entropy and effective number of parties**
 
 The diagrams below show vote disperion an camera dispersion measured with different diversity indexes: Shannon entropy and Laakso-Taagepera effective number of parties.
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-30-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-30-2.png) 
+![](ElectoralSpace_files/figure-html/unnamed-chunk-33-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-33-2.png) 
 

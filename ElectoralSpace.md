@@ -552,3 +552,15 @@ The diagrams below show vote disperion an camera dispersion measured with differ
 
 ![](ElectoralSpace_files/figure-html/unnamed-chunk-33-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-33-2.png) 
 
+**Largest remainder method with Hare Quota is similar to Voronoi allocation:**
+
+![](ElectoralSpace_files/figure-html/unnamed-chunk-34-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-34-2.png) 
+
+```
+## [1] 0.004925373
+```
+
+```
+## [1] 0.08835821
+```
+Differences are only observed in the boundaries because we have not considered parties ties in the distance functions.

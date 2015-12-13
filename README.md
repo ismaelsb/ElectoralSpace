@@ -21,6 +21,7 @@ Next we show vote disperion and camera dispersion measured with different divers
 
 It can be observed that the Largest remainder method with Hare Quota gives the nearest allocation to each share of votes. Its allocation regions are the Voronoi regions given by the seat allocation nodes.
 
+
 In http://rpubs.com/ismaelsb/ElectoralSpace and https://github.com/ismaelsb/ElectoralSpace/blob/master/ElectoralSpace.md we present the results.
 
 The code used for these computations and representations is available here: https://github.com/ismaelsb/ElectoralSpace/blob/master/ElectoralSpace.R
@@ -51,8 +52,8 @@ Podemos también representar datos históricos o geográficos de varias eleccion
 
 A continuación mostramos la dispersión de los votos y de la cámara medidas con diferentes índices de diversidad: la entropía de Shannon y el número efectivo de partidos de Laakso-Taagepera.
 
-It can be observed that the Largest remainder method with Hare Quota gives the nearest allocation to each share of votes. Its allocation regions are the Voronoi regions given by the seat allocation nodes.
 Se puede observar que el método de los restos mayores con el cociente Hare da la asignación más cercana a cada reparto de votos. Su regiones de asignación son las regiones de Voronoi dadas por los nodos de asignación de escaños.
+
 
 En http://rpubs.com/ismaelsb/ElectoralSpace o en https://github.com/ismaelsb/ElectoralSpace/blob/master/ElectoralSpace.md se presentan los resultados 
 

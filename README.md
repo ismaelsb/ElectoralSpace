@@ -8,7 +8,7 @@ We use a function for electoral allocation for different proportional methods an
 
 We also show some of the functions used to compute allocations or to plot the diagrams.
 
-The regions created by D'Hondt method aren't the same as the Voronoi regions created by the lattice of nodes. This method allocates more than 60% of the points correctly. Sainte-Laguë method is, in more than 90% of the points, similar to Voronoi. In D'Hondt the sizes of the regions are similar, but Sainte-Laguë produces regions centered on the nodes. Voronoi regions would be obtained by a method always allocating the nearest node. Those regions are similar if we use Euclidean, Manhattan or uniform distance. A Voronoi allocation method should solve the ties between two or more parties when the result is in a border in the same way the quotients methods do (by the total number of votes, and if the tie persists, at random).
+The regions created by D'Hondt method aren't the same as the Voronoi regions created by the lattice of nodes. This method allocates more than 60% of the points correctly. Sainte-Laguë method is, in more than 90% of the points, similar to Voronoi. In D'Hondt the sizes of the regions are similar, but Sainte-Laguë produces regions centered on the nodes. Voronoi regions would be obtained by a method always allocating the nearest node. Those regions are similar if we use Euclidean, Manhattan or uniform distance. A Voronoi allocation method should solve the ties between two or more parties when the result is in a border in the same way the quotients methods do (by the total number of votes, and if the tie persists, at random). We study two types of Voronoi regions: those created by distances on the projective space of the simplex (Euclidean, Manhattan and Uniform give the same regions), and those created by the orthodromic distance on the unit sphere (normalized vectors).
 
 Quotients method produce regions with borders in angular sections. Voronoi borders are given by segment sections.
 
@@ -17,7 +17,11 @@ This diagram visualizes in a remarkable way the geometry of the Electoral Space.
 
 We can also draw historic data from past elections on the diagrams.
 
-In http://rpubs.com/ismaelsb/ElectoralSpace and https://github.com/ismaelsb/ElectoralSpace/blob/master/ElectoralSpace.md we present the results.
+Next we show vote disperion and camera dispersion measured with different diversity indexes: Shannon entropy and Laakso-Taagepera effective number of parties.
+
+It can be observed that the Largest remainder method with Hare Quota gives the nearest allocation to each share of votes. Its allocation regions are the Voronoi regions given by the seat allocation nodes.
+
+In http://rpubs.com/ismaelsb/ElectoralSpace and https://github.com/ismaelsb/ElectoralSpace/blob/master/ElectoralSpace.md we present the results.
 
 The code used for these computations and representations is available here: https://github.com/ismaelsb/ElectoralSpace/blob/master/ElectoralSpace.R
 
@@ -37,13 +41,17 @@ Utilizamos una función de asignación electoral para distintos métodos proporc
 
 Mostramos algunas de las funciones utilizadas para calcular la asignación y generar los diagramas.
 
-Las regiones creadas por el reparto de D'Hondt no se corresponden con las regiones de Voronoi de los nodos. Este método asigna correctamente más del 60% de los puntos. El reparto de Sainte-Laguë se aproxima en más de un 90% a las regiones de Voronoi sin llegar a ser igual. Con D'Hondt el tamaño de las distintas regiones es similar, mientras para Sainte-Laguë los nodos se encuentran en el centro de ellas. Obtendríamos las regiones de Voronoi si a cada punto se le asignara el nodo más próximo. Para este tipo de reparto se obtienen los mismos resultados si utilizamos la distancia Euclídea, Manhattan o la uniforme. Como detalle, el cálculo para la asignación de Voronoi debería resolver un empate entre dos o más partidos cuando el resultado electoral se situa exactamente en la frontera entre dos o más regiones contiguas, del mismo modo que los métodos de cocientes resuelve los empates de cocientes (con el número de votos total y al azar en caso de nuevo empate).
+Las regiones creadas por el reparto de D'Hondt no se corresponden con las regiones de Voronoi de los nodos. Este método asigna correctamente más del 60% de los puntos. El reparto de Sainte-Laguë se aproxima en más de un 90% a las regiones de Voronoi sin llegar a ser igual. Con D'Hondt el tamaño de las distintas regiones es similar, mientras para Sainte-Laguë los nodos se encuentran en el centro de ellas. Obtendríamos las regiones de Voronoi si a cada punto se le asignara el nodo más próximo. Para este tipo de reparto se obtienen los mismos resultados si utilizamos la distancia Euclídea, Manhattan o la uniforme. Como detalle, el cálculo para la asignación de Voronoi debería resolver un empate entre dos o más partidos cuando el resultado electoral se situa exactamente en la frontera entre dos o más regiones contiguas, del mismo modo que los métodos de cocientes resuelve los empates de cocientes (con el número de votos total y al azar en caso de nuevo empate). Estudiamos dos tipos de regiones de Voronoi: las creadas por una distancia en el espacio proyectivo del símplice (la euclídea, la Manhattan y la uniforme dan las mismas regiones), y las creadas por la distancia ortodrómica en la esfera unidad (con vectores normalizados).
 
 Los métodos de cocientes producen regiones con fronteras dadas por sectores angulares mientras que la asignación de Voronoi produce regiones dadas por sectores de segmentos.
 
 Se estudia aquí la asignación no sólo en resultado, sino también en el orden de reparto de los escaños, y se dibujan diagramas que muestran las regiones del Espacio Electoral divididas en subregiones para cada posible ordenación de la asignación. El diagrama de las subregiones visibiliza de manera bastante destacable la geometría de las regiones electorales.
 
 Podemos también representar datos históricos o geográficos de varias elecciones sobre el diagrama.
+
+A continuación mostramos la dispersión de los votos y de la cámara medidas con diferentes índices de diversidad: la entropía de Shannon y el número efectivo de partidos de Laakso-Taagepera.
+
+Se puede observar que el método de los restos mayores con el cociente Hare da la asignación más cercana a cada reparto de votos. Su regiones de asignación son las regiones de Voronoi dadas por los nodos de asignación de escaños.
 
 En http://rpubs.com/ismaelsb/ElectoralSpace o en https://github.com/ismaelsb/ElectoralSpace/blob/master/ElectoralSpace.md se presentan los resultados 
 

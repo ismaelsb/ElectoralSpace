@@ -793,7 +793,7 @@ ggtern.multi(e1, e2, n1, n2, cols=2)
 
 
 
-#Major Rests (Hare Quota) Allocation is Voronoi
+#Largest remainder method with Hare Quota is Voronoi
 
 alloc <- function(parties, votes, seats, step=1, threshold=0){
   
@@ -840,7 +840,7 @@ ggtern(data=dfH[[1]],aes(x,y,z,color=as.factor(Allocated)))+
   geom_point(alpha=1)+
   geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
   geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
-  labs(x="X",y="Y",z="Z",title="Major Rests (Hare Quota) Allocation")+
+  labs(x="X",y="Y",z="Z",title="Largest remainder - Hare Quota Allocation")+
   #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
   scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
 
@@ -859,7 +859,7 @@ mH2 <- ggtern(data=dfH[[1]],aes(x,y,z,color=Malapportionment2)) +
   theme_rgbw() +
   geom_point(alpha=0.8) +
   geom_point(data=NodesData,aes(x,y,z),alpha=0.8,color="grey60")+
-  labs(x="X",y="Y",z="Z",title="Hare Orthodromic Malapportionment")+
+  labs(x="X",y="Y",z="Z",title="Hare Malapportionment (Orthodromic)")+
   #scale_colour_grey(na.value = "black", guide = FALSE)
   scale_colour_brewer(palette = "YlGnBu", na.value = "grey60", guide = FALSE)
 

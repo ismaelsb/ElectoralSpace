@@ -552,9 +552,46 @@ The diagrams below show vote disperion an camera dispersion measured with differ
 
 ![](ElectoralSpace_files/figure-html/unnamed-chunk-33-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-33-2.png) 
 
-**Largest remainder method with Hare Quota is similar to Voronoi allocation:**
+**Largest remainder method with Hare Quota is similar to Voronoi allocation**
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-34-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-34-2.png) 
+Hare quota gives the nearest allocation to each share of votes. Its allocation regions are the Voronoi regions given by the seat allocation nodes:
+
+
+```r
+alloc <- function(parties, votes, seats, step=1, threshold=0){
+  
+  #function for Hare Quota seat allocation
+  votes=votes*(votes>=(threshold*sum(votes)))
+  
+  nparties = length(votes)
+  
+  quota = sum(votes)/seats
+  QAllocation = floor(votes/quota)
+  rests = votes %% quota
+  
+  qtable <- data.frame(
+    parties = 1:nparties,
+    rests,
+    votes
+  )
+  
+  if (seats>sum(QAllocation)){
+    
+    mayorRestsParties <- qtable[order(-rests,-votes),]$parties[1:(seats - sum(QAllocation))]
+    mayorRestsLogic <- is.element(1:nparties, mayorRestsParties)
+    
+  } else {mayorRestsLogic <- matrix(F,1,nparties)}
+  
+  
+  Allocation = list(list(QAllocation + mayorRestsLogic, matrix(parties[1],seats)))
+  #ordering is not taken into account
+  
+  return(Allocation);
+  
+}
+```
+
+![](ElectoralSpace_files/figure-html/unnamed-chunk-35-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-35-2.png) 
 
 ```
 ## [1] 0.004925373
@@ -563,4 +600,8 @@ The diagrams below show vote disperion an camera dispersion measured with differ
 ```
 ## [1] 0.08835821
 ```
-Differences are only observed in the boundaries because we have not considered parties ties in the distance functions.
+
+Differences are only observed in the boundaries because we have not considered the way ties break when using the distance functions.
+
+
+

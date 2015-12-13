@@ -557,6 +557,8 @@ The diagrams below show vote disperion an camera dispersion measured with differ
 Hare quota gives the nearest allocation to each share of votes. Its allocation regions are the Voronoi regions given by the seat allocation nodes:
 
 
+
+
 ```r
 alloc <- function(parties, votes, seats, step=1, threshold=0){
   
@@ -591,7 +593,7 @@ alloc <- function(parties, votes, seats, step=1, threshold=0){
 }
 ```
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-35-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-35-2.png) 
+![](ElectoralSpace_files/figure-html/unnamed-chunk-36-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-36-2.png) 
 
 ```
 ## [1] 0.004925373
@@ -603,5 +605,18 @@ alloc <- function(parties, votes, seats, step=1, threshold=0){
 
 Differences are only observed in the boundaries because we have not considered the way ties break when using the distance functions.
 
+
+
+Hare quota is pretty close to Sainte-Laguë and Droop quota is so to D'Hondt, as can be seen in the next diagrams.
+
+![](ElectoralSpace_files/figure-html/unnamed-chunk-37-1.png) 
+
+```
+## [1] 0.8931343
+```
+
+```
+## [1] 0.9232836
+```
 
 

@@ -579,7 +579,7 @@ ggtern.multi(om1, om2, cols=2)
 
 #points not allocated by D'Hondt in their corresponding Voronoi region
 sum(df[[1]]$Malapportionment[1:dots])/dots
-#points not allocated by Sainte-Lagu? in their corresponding Voronoi region
+#points not allocated by Sainte-Laguë in their corresponding Voronoi region
 sum(df[[2]]$Malapportionment[1:dots])/dots
 
 #points not allocated by D'Hondt in their corresponding orthodromic Voronoi region
@@ -643,19 +643,19 @@ p3 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(df[[1]]$All4)))+
 p4 <- ggtern(data=df[[2]],aes(x,y,z,color=as.factor(df[[2]]$All2)))+
   theme_bw()+
   geom_point(alpha=1)+
-  labs(x="X",y="Y",z="Z",title="Sainte-Lagu?, 2 seats")+
+  labs(x="X",y="Y",z="Z",title="Sainte-Laguë, 2 seats")+
   scale_colour_manual(values=generateColors(colorRGB0,2), guide=FALSE)
 
 p5 <- ggtern(data=df[[2]],aes(x,y,z,color=as.factor(df[[2]]$All3)))+
   theme_bw()+
   geom_point(alpha=1)+
-  labs(x="X",y="Y",z="Z",title="Sainte-Lagu?, 3 seats")+
+  labs(x="X",y="Y",z="Z",title="Sainte-Laguë, 3 seats")+
   scale_colour_manual(values=generateColors(colorRGB0,3), guide=FALSE)
 
 p6 <- ggtern(data=df[[2]],aes(x,y,z,color=as.factor(df[[2]]$All4)))+
   theme_bw()+
   geom_point(alpha=1)+
-  labs(x="X",y="Y",z="Z",title="Sainte-Lagu?, 4 seats")+
+  labs(x="X",y="Y",z="Z",title="Sainte-Laguë, 4 seats")+
   scale_colour_manual(values=generateColors(colorRGB0,4), guide=FALSE)
 
 plist=list(p1,p4,p2,p5,p3,p6)
@@ -733,14 +733,14 @@ fit$fitted
 
 #Entropy
 Seats <- length(seats)
-df[[1]][,11+Seats+1] <- rowSums(-df[[1]][,1:3]*modifiedlog(df[[1]][,1:3]))
-df[[1]][,11+Seats+2] <- rowSums(-df[[1]][,4:6]/max(seats)*modifiedlog(df[[1]][,4:6]/max(seats)))
+df[[1]][,13+Seats+1] <- rowSums(-df[[1]][,1:3]*modifiedlog(df[[1]][,1:3]))
+df[[1]][,13+Seats+2] <- rowSums(-df[[1]][,4:6]/max(seats)*modifiedlog(df[[1]][,4:6]/max(seats)))
 
 #Effective number of parties
-df[[1]][,11+Seats+3] <- 1/rowSums((df[[1]][,1:3])^2)
-df[[1]][,11+Seats+4] <- 1/rowSums((df[[1]][,4:6]/max(seats))^2)
+df[[1]][,13+Seats+3] <- 1/rowSums((df[[1]][,1:3])^2)
+df[[1]][,13+Seats+4] <- 1/rowSums((df[[1]][,4:6]/max(seats))^2)
 
-names(df[[1]])[(11+Seats+1):(11+Seats+4)] <- c('Entropy','CameraEntropy','Parties','CameraParties')
+names(df[[1]])[(13+Seats+1):(13+Seats+4)] <- c('Entropy','CameraEntropy','Parties','CameraParties')
 
 options(warn=-1) 
 
@@ -793,6 +793,7 @@ ggtern.multi(e1, e2, n1, n2, cols=2)
 
 
 
+seats=5;
 #Largest remainder method with Hare Quota is Voronoi
 
 alloc <- function(parties, votes, seats, step=1, threshold=0){
@@ -827,15 +828,55 @@ alloc <- function(parties, votes, seats, step=1, threshold=0){
   
 }
 
-seats=5;
-
 dfH = SpatialData(dotsperside, seats)
 
-#head(dfH[[1]][sample(1:dots,10,replace=F),])
+df[[2]][,13+Seats+1] <-  dfH[[1]]$Allocated
+names(df[[2]])[13+Seats+1] <- "Hare"
 
+#Largest remainder method with Droop Quota
+
+alloc <- function(parties, votes, seats, step=1, threshold=0){
+  
+  #function for Hare Quota seat allocation
+  votes=votes*(votes>=(threshold*sum(votes)))
+  
+  nparties = length(votes)
+  
+  quota = sum(votes)/(seats+1)
+  QAllocation = floor(votes/quota)
+  rests = votes %% quota
+  
+  qtable <- data.frame(
+    parties = 1:nparties,
+    rests,
+    votes
+  )
+  
+  if (seats>sum(QAllocation)){
+    
+    mayorRestsParties <- qtable[order(-rests,-votes),]$parties[1:(seats - sum(QAllocation))]
+    mayorRestsLogic <- is.element(1:nparties, mayorRestsParties)
+    
+  } else {mayorRestsLogic <- matrix(F,1,nparties)}
+  
+  
+  Allocation = list(list(QAllocation + mayorRestsLogic, matrix(parties[1],seats)))
+  #ordering is not taken into account
+  
+  return(Allocation);
+  
+}
+
+dfD = SpatialData(dotsperside, seats)
+
+df[[1]][,17+Seats+1] <-  dfD[[1]]$Allocated
+names(df[[1]])[17+Seats+1] <- "Droop"
+
+#head(dfH[[1]][sample(1:dots,10,replace=F),])
+#head(dfH[[1]][sample(1:dots,10,replace=F),])
 #NodesData <- generateNodes(max(seats))
 
-ggtern(data=dfH[[1]],aes(x,y,z,color=as.factor(Allocated)))+
+lr1 <- ggtern(data=dfH[[1]],aes(x,y,z,color=as.factor(Allocated)))+
   theme_bw()+
   geom_point(alpha=1)+
   geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
@@ -844,6 +885,16 @@ ggtern(data=dfH[[1]],aes(x,y,z,color=as.factor(Allocated)))+
   #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
   scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
 
+lr2 <- ggtern(data=dfD[[1]],aes(x,y,z,color=as.factor(Allocated)))+
+  theme_bw()+
+  geom_point(alpha=1)+
+  geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
+  geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
+  labs(x="X",y="Y",z="Z",title="Largest remainder - Droop Quota Allocation")+
+  #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+  scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
+
+ggtern.multi(lr1, lr2, cols=2)
 
 #malapportionment
 mH1 <- ggtern(data=dfH[[1]],aes(x,y,z,color=Malapportionment)) +
@@ -871,7 +922,28 @@ sum(dfH[[1]]$Malapportionment[1:dots])/dots
 sum(dfH[[1]]$Malapportionment2[1:dots])/dots
 
 
+#Droop vs D'Hondt
 
+diff1 <- ggtern(data=df[[1]],aes(x,y,z,color=Allocated!=Droop)) +
+  theme_rgbw() +
+  geom_point(alpha=0.8) +
+  geom_point(data=NodesData,aes(x,y,z),alpha=0.8,color="grey30")+
+  labs(x="X",y="Y",z="Z",title="Droop vs D'Hondt regions")+
+  #scale_colour_grey(na.value = "black", guide = FALSE)
+  scale_colour_brewer(palette = "Greys", na.value = "grey60", guide = FALSE)
 
+diff2 <- ggtern(data=df[[2]],aes(x,y,z,color=Allocated!=Hare)) +
+  theme_rgbw() +
+  geom_point(alpha=0.8) +
+  geom_point(data=NodesData,aes(x,y,z),alpha=0.8,color="grey30")+
+  labs(x="X",y="Y",z="Z",title="Hare vs Sainte-Laguë regions")+
+  #scale_colour_grey(na.value = "black", guide = FALSE)
+  scale_colour_brewer(palette = "Greys", na.value = "grey60", guide = FALSE)
 
+ggtern.multi(diff1, diff2, cols=2)
+
+#Droop vs D'Hondt
+sum(df[[1]]$Allocated==df[[1]]$Droop)/dots
+#Hare vs Sainte-Laguë
+sum(df[[2]]$Allocated==df[[2]]$Hare)/dots
 

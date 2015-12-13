@@ -22,6 +22,7 @@ Next we show vote disperion and camera dispersion measured with different divers
 
 It can be observed that the Largest remainder method with Hare Quota gives the nearest allocation to each share of votes. Its allocation regions are the Voronoi regions given by the seat allocation nodes.
 
+Hare quota is pretty close to Sainte-Laguë and Droop quota is so to D'Hondt as can be seen in the next diagrams.
 
 In http://rpubs.com/ismaelsb/ElectoralSpace and https://github.com/ismaelsb/ElectoralSpace/blob/master/ElectoralSpace.md we present the results.
 
@@ -55,6 +56,7 @@ A continuación mostramos la dispersión de los votos y de la cámara medidas co
 
 Se puede observar que el método de los restos mayores con el cociente Hare da la asignación más cercana a cada reparto de votos. Su regiones de asignación son las regiones de Voronoi dadas por los nodos de asignación de escaños.
 
+El cociente Hare es bastante parecido a Sainte-Laguë y el cociente Droop lo es a D'Hondt, como puede verse en los siguientes diagramas.
 
 En http://rpubs.com/ismaelsb/ElectoralSpace o en https://github.com/ismaelsb/ElectoralSpace/blob/master/ElectoralSpace.md se presentan los resultados 
 

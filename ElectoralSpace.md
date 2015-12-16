@@ -579,13 +579,13 @@ alloc <- function(parties, votes, seats, step=1, threshold=0){
   
   if (seats>sum(QAllocation)){
     
-    mayorRestsParties <- qtable[order(-rests,-votes),]$parties[1:(seats - sum(QAllocation))]
-    mayorRestsLogic <- is.element(1:nparties, mayorRestsParties)
+    largestRestsParties <- qtable[order(-rests,-votes),]$parties[1:(seats - sum(QAllocation))]
+    largestRestsLogic <- is.element(1:nparties, largestRestsParties)
     
-  } else {mayorRestsLogic <- matrix(F,1,nparties)}
+  } else {largestRestsLogic <- matrix(F,1,nparties)}
   
   
-  Allocation = list(list(QAllocation + mayorRestsLogic, matrix(parties[1],seats)))
+  Allocation = list(list(QAllocation + largestRestsLogic, matrix(parties[1],seats)))
   #ordering is not taken into account
   
   return(Allocation);

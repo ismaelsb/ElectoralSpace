@@ -981,13 +981,13 @@ alloc <- function(parties, votes, seats, step=1, threshold=0){
   
   if (seats>sum(QAllocation)){
     
-    mayorRestsParties <- qtable[order(-rests,-votes),]$parties[1:(seats - sum(QAllocation))]
-    mayorRestsLogic <- is.element(1:nparties, mayorRestsParties)
+    largestRestsParties <- qtable[order(-rests,-votes),]$parties[1:(seats - sum(QAllocation))]
+    largestRestsLogic <- is.element(1:nparties, largestRestsParties)
     
-  } else {mayorRestsLogic <- matrix(F,1,nparties)}
+  } else {largestRestsLogic <- matrix(F,1,nparties)}
   
   
-  Allocation = list(list(QAllocation + mayorRestsLogic, matrix(parties[1],seats)))
+  Allocation = list(list(QAllocation + largestRestsLogic, matrix(parties[1],seats)))
   #ordering is not taken into account
   
   return(Allocation);
@@ -1025,13 +1025,13 @@ alloc <- function(parties, votes, seats, step=1, threshold=0){
   
   if (seats>sum(QAllocation)){
     
-    mayorRestsParties <- qtable[order(-rests,-votes),]$parties[1:(seats - sum(QAllocation))]
-    mayorRestsLogic <- is.element(1:nparties, mayorRestsParties)
+    largestRestsParties <- qtable[order(-rests,-votes),]$parties[1:(seats - sum(QAllocation))]
+    largestRestsLogic <- is.element(1:nparties, largestRestsParties)
     
-  } else {mayorRestsLogic <- matrix(F,1,nparties)}
+  } else {largestRestsLogic <- matrix(F,1,nparties)}
   
   
-  Allocation = list(list(QAllocation + mayorRestsLogic, matrix(parties[1],seats)))
+  Allocation = list(list(QAllocation + largestRestsLogic, matrix(parties[1],seats)))
   #ordering is not taken into account
   
   return(Allocation);
@@ -1047,21 +1047,21 @@ names(df[[1]])[17+Seats+1] <- "Droop"
 #head(dfH[[1]][sample(1:dots,10,replace=F),])
 #NodesData <- generateNodes(max(seats))
 
-lr1 <- ggtern(data=dfH[[1]],aes(x,y,z,color=as.factor(Allocated)))+
-  theme_bw()+
-  geom_point(alpha=1)+
-  geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
-  geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
-  labs(x="X",y="Y",z="Z",title="Largest remainder - Hare Quota Allocation")+
-  #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
-  scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
-
-lr2 <- ggtern(data=dfD[[1]],aes(x,y,z,color=as.factor(Allocated)))+
+lr1 <- ggtern(data=dfD[[1]],aes(x,y,z,color=as.factor(Allocated)))+
   theme_bw()+
   geom_point(alpha=1)+
   geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
   geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
   labs(x="X",y="Y",z="Z",title="Largest remainder - Droop Quota Allocation")+
+  #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+  scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
+
+lr2 <- ggtern(data=dfH[[1]],aes(x,y,z,color=as.factor(Allocated)))+
+  theme_bw()+
+  geom_point(alpha=1)+
+  geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
+  geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
+  labs(x="X",y="Y",z="Z",title="Largest remainder - Hare Quota Allocation")+
   #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
   scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
 

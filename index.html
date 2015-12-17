@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Electoral Space by ismaelsb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Electoral Space</h1>
+      <h2 class="project-tagline">Geometric visualization for proportional electoral methodes</h2>
+      <a href="https://github.com/ismaelsb/ElectoralSpace" class="btn">View on GitHub</a>
+      <a href="https://github.com/ismaelsb/ElectoralSpace/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/ismaelsb/ElectoralSpace/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h1>
+<a id="electoral-space" class="anchor" href="#electoral-space" aria-hidden="true"><span class="octicon octicon-link"></span></a>Electoral Space</h1>
+
+<h2>
+<a id="geometric-visualization-for-proportional-electoral-methodes" class="anchor" href="#geometric-visualization-for-proportional-electoral-methodes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Geometric visualization for proportional electoral methodes.</h2>
+
+<p>Code available here: <a href="https://github.com/ismaelsb/ElectoralSpace">https://github.com/ismaelsb/ElectoralSpace</a></p>
+
+<p>Interactive web app: <a href="https://ismaelsb.shinyapps.io/ElectoralSpace">https://ismaelsb.shinyapps.io/ElectoralSpace</a></p>
+
+<p><strong>Introduction</strong></p>
+
+<p>In order to represent 3 variables in 2 dimensions in an only way for each set of proportional values, we can use a ternary diagram. You can see this diagram as the projection of the points from the positive quadrant in space onto the hyperplane of points whose sum of coodinates equals 1. The image of this projection is an equilateral triangle. In the same way we can represent two values in a segment and four values in a tetrahedron. This representation is also known by the name of barycentric coordinates in a simplex.</p>
+
+<p><img src="ElectoralSpace_files/figure-html/unnamed-chunk-2-1.png" alt=""> </p>
+
+<p><strong>Electoral allocation functions (more in the code)</strong></p>
+
+<p>A diagram like these can be used to represent the results in political elections in which the votes are shared between 3 parties. Each point in the triangle is represented by three coordinates corresponding the share of votes received by each party. We have a determined number of seats to allocate, and each posible sharing is represented by a highlighted dot (a node) in the triangle and a label with its result. The electoral method would allocate to each electoral result one of the possible sharings of seats. The regions of points to which the same sharing is allocated are represented in the same color. For two parties we'd use a segment. For four, a tetrahedron. The diagram is usefull for visualizing possible seats at stake when the results are close to the borders between two or more regions.</p>
+
+<p>We use a function for electoral allocation for different proportional methods and an optional entry threshold.</p>
+
+<p>We also show some of the functions used to compute allocations or to plot the diagrams.</p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-en">generateColors</span> <span class="pl-k">&lt;-</span> <span class="pl-k">function</span> (<span class="pl-smi">colorRGB</span>, <span class="pl-smi">seats</span>) {
+
+  <span class="pl-v">nnodes</span> <span class="pl-k">=</span> (<span class="pl-smi">seats</span><span class="pl-k">+</span><span class="pl-c1">1</span>)<span class="pl-k">*</span>(<span class="pl-smi">seats</span><span class="pl-k">+</span><span class="pl-c1">2</span>)<span class="pl-k">/</span><span class="pl-c1">2</span>;
+  <span class="pl-smi">nodes</span> <span class="pl-k">&lt;-</span> as.matrix(generateNodes(<span class="pl-smi">seats</span>)[,c(<span class="pl-s"><span class="pl-pds">"</span>x<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>y<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>z<span class="pl-pds">"</span></span>)])
+  <span class="pl-c">#decimal codes for colors in nodes</span>
+  <span class="pl-v">Code3</span> <span class="pl-k">=</span> floor(<span class="pl-smi">nodes</span><span class="pl-k">*</span><span class="pl-c1">255.9</span><span class="pl-k">/</span><span class="pl-smi">seats</span>) <span class="pl-c">#255.9 avoids seats -&gt; 256 -&gt; HEX #100 case</span>
+  <span class="pl-c">#linear transformation to fixed extreme colors</span>
+  <span class="pl-v">CodeDecRGB</span> <span class="pl-k">=</span> floor(<span class="pl-smi">Code3</span><span class="pl-k">%*%</span><span class="pl-k">matrix</span>(<span class="pl-smi">colorRGB</span>,<span class="pl-c1">3</span>,<span class="pl-c1">3</span>, <span class="pl-v">byrow</span><span class="pl-k">=</span><span class="pl-c1">T</span>)<span class="pl-k">/</span><span class="pl-c1">256</span>)
+  <span class="pl-c">#hex codes for colors in nodes</span>
+  <span class="pl-v">CodeRGB</span><span class="pl-k">=</span>cbind(<span class="pl-k">matrix</span>(<span class="pl-s"><span class="pl-pds">"</span>#<span class="pl-pds">"</span></span>,<span class="pl-smi">nnodes</span>),format(as.hexmode(<span class="pl-smi">CodeDecRGB</span>[,<span class="pl-c1">1</span>]),<span class="pl-v">width</span><span class="pl-k">=</span><span class="pl-c1">2</span>),format(as.hexmode(<span class="pl-smi">CodeDecRGB</span>[,<span class="pl-c1">2</span>]),<span class="pl-v">width</span><span class="pl-k">=</span><span class="pl-c1">2</span>),format(as.hexmode(<span class="pl-smi">CodeDecRGB</span>[,<span class="pl-c1">3</span>]),<span class="pl-v">width</span><span class="pl-k">=</span><span class="pl-c1">2</span>))
+  <span class="pl-v">CodeRGB</span><span class="pl-k">=</span>do.call(<span class="pl-s"><span class="pl-pds">"</span>paste0<span class="pl-pds">"</span></span>,as.data.frame(<span class="pl-smi">CodeRGB</span>))
+  <span class="pl-v">values</span><span class="pl-k">=</span><span class="pl-smi">CodeRGB</span>
+
+  <span class="pl-k">return</span>(<span class="pl-smi">values</span>);
+
+}</pre></div>
+
+<p><img src="ElectoralSpace_files/figure-html/unnamed-chunk-6-1.png" alt=""> </p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-en">alloc</span> <span class="pl-k">&lt;-</span> <span class="pl-k">function</span>(<span class="pl-smi">parties</span>, <span class="pl-smi">votes</span>, <span class="pl-smi">seats</span>, <span class="pl-smi">step</span>, <span class="pl-v">threshold</span><span class="pl-k">=</span><span class="pl-c1">0</span>){
+
+  <span class="pl-c">#function for the seat allocation and its ordering</span>
+  <span class="pl-c">#computes allocation for several values of seats and divisor step methods</span>
+  <span class="pl-c">#with the same quotiens table</span>
+  <span class="pl-v">votes</span><span class="pl-k">=</span><span class="pl-smi">votes</span><span class="pl-k">*</span>(<span class="pl-smi">votes</span><span class="pl-k">&gt;</span><span class="pl-k">=</span>(<span class="pl-smi">threshold</span><span class="pl-k">*</span>sum(<span class="pl-smi">votes</span>)))
+  <span class="pl-smi">Mst</span> <span class="pl-k">&lt;-</span> max(<span class="pl-smi">step</span>)
+  <span class="pl-smi">Mse</span> <span class="pl-k">&lt;-</span> max(<span class="pl-smi">seats</span>)
+  <span class="pl-v">nquotients</span><span class="pl-k">=</span>(<span class="pl-c1">1</span><span class="pl-k">+</span><span class="pl-smi">Mst</span><span class="pl-k">*</span>(<span class="pl-smi">Mse</span><span class="pl-k">-</span><span class="pl-c1">1</span>))
+
+  <span class="pl-c">#table with all the quotients needed</span>
+  <span class="pl-smi">quotienstable</span> <span class="pl-k">&lt;-</span> <span class="pl-k">data.frame</span>( 
+    <span class="pl-v">parties</span>    <span class="pl-k">=</span> rep(<span class="pl-smi">parties</span>, <span class="pl-v">each</span> <span class="pl-k">=</span> <span class="pl-smi">nquotients</span>), 
+    <span class="pl-v">quotients</span>  <span class="pl-k">=</span> as.vector(sapply(<span class="pl-smi">votes</span>, <span class="pl-k">function</span>(<span class="pl-smi">x</span>) 
+      <span class="pl-smi">x</span><span class="pl-k">/</span>seq(<span class="pl-v">from</span><span class="pl-k">=</span><span class="pl-c1">1</span>, <span class="pl-v">to</span><span class="pl-k">=</span><span class="pl-smi">nquotients</span>) )),
+    <span class="pl-v">votesrep</span>   <span class="pl-k">=</span> rep(<span class="pl-smi">votes</span>, <span class="pl-v">each</span> <span class="pl-k">=</span> <span class="pl-smi">nquotients</span>)
+  ) 
+
+  <span class="pl-v">SeatsList</span><span class="pl-k">=</span><span class="pl-k">list</span>()
+  <span class="pl-v">filteredtable</span> <span class="pl-k">=</span><span class="pl-k">list</span>()
+
+
+  <span class="pl-k">for</span> (<span class="pl-smi">j</span> <span class="pl-k">in</span> <span class="pl-c1">1</span><span class="pl-k">:</span>length(<span class="pl-smi">step</span>)) {
+
+
+    <span class="pl-c">#select from the table of all quotiens the ones whose divisors</span>
+    <span class="pl-c">#belong to the current sequence, given 'seats' and 'step'</span>
+    <span class="pl-smi">select</span> <span class="pl-k">&lt;-</span> rep(seq(<span class="pl-v">from</span><span class="pl-k">=</span><span class="pl-c1">1</span>, <span class="pl-v">to</span><span class="pl-k">=</span><span class="pl-c1">1</span><span class="pl-k">+</span><span class="pl-smi">step</span>[<span class="pl-smi">j</span>]<span class="pl-k">*</span>(<span class="pl-smi">Mse</span><span class="pl-k">-</span><span class="pl-c1">1</span>), <span class="pl-v">by</span><span class="pl-k">=</span><span class="pl-smi">step</span>[<span class="pl-smi">j</span>]),length(<span class="pl-smi">parties</span>))<span class="pl-k">+</span>
+      rep(seq(<span class="pl-v">from</span><span class="pl-k">=</span><span class="pl-c1">0</span>,<span class="pl-v">to</span><span class="pl-k">=</span><span class="pl-smi">nquotients</span><span class="pl-k">*</span>length(<span class="pl-smi">parties</span>)<span class="pl-k">-</span><span class="pl-c1">1</span>,<span class="pl-v">by</span><span class="pl-k">=</span><span class="pl-smi">nquotients</span>),<span class="pl-v">each</span><span class="pl-k">=</span><span class="pl-smi">Mse</span>)
+
+    <span class="pl-smi">filteredtable</span> [[<span class="pl-smi">j</span>]] <span class="pl-k">&lt;-</span> <span class="pl-smi">quotienstable</span><span class="pl-k">$</span><span class="pl-smi">parties</span>[<span class="pl-smi">select</span>][order(<span class="pl-k">-</span><span class="pl-smi">quotienstable</span><span class="pl-k">$</span><span class="pl-smi">quotients</span>[<span class="pl-smi">select</span>], <span class="pl-k">-</span><span class="pl-smi">quotienstable</span><span class="pl-k">$</span><span class="pl-smi">votesrep</span>[<span class="pl-smi">select</span>])]
+
+    <span class="pl-smi">SeatsList</span>[[<span class="pl-smi">j</span>]]<span class="pl-k">&lt;-</span><span class="pl-k">list</span>()
+
+    <span class="pl-c">#a vector of values for seats if you want to compute the partial sums</span>
+    <span class="pl-k">for</span> (<span class="pl-smi">i</span> <span class="pl-k">in</span> <span class="pl-c1">1</span><span class="pl-k">:</span>length(<span class="pl-smi">seats</span>)){
+      <span class="pl-smi">SeatsList</span>[[<span class="pl-smi">j</span>]][[<span class="pl-smi">i</span>]]<span class="pl-k">=</span> table(<span class="pl-smi">filteredtable</span>[[<span class="pl-smi">j</span>]][<span class="pl-c1">1</span><span class="pl-k">:</span><span class="pl-smi">seats</span>[<span class="pl-smi">i</span>]])
+    }
+
+    names(<span class="pl-smi">SeatsList</span>[[<span class="pl-smi">j</span>]])[<span class="pl-c1">1</span><span class="pl-k">:</span>length(<span class="pl-smi">seats</span>)]<span class="pl-k">&lt;-</span>do.call(<span class="pl-s"><span class="pl-pds">"</span>paste0<span class="pl-pds">"</span></span>,as.data.frame(cbind(<span class="pl-s"><span class="pl-pds">"</span>divisor step <span class="pl-pds">"</span></span>,<span class="pl-smi">step</span>[<span class="pl-smi">j</span>],<span class="pl-s"><span class="pl-pds">"</span> for <span class="pl-pds">"</span></span>, <span class="pl-smi">seats</span>,<span class="pl-s"><span class="pl-pds">"</span> seats<span class="pl-pds">"</span></span>)))
+
+
+    <span class="pl-smi">SeatsList</span>[[<span class="pl-smi">j</span>]][[length(<span class="pl-smi">seats</span>)<span class="pl-k">+</span><span class="pl-c1">1</span>]] <span class="pl-k">=</span> as.matrix(<span class="pl-smi">filteredtable</span>[[<span class="pl-smi">j</span>]][<span class="pl-c1">1</span><span class="pl-k">:</span><span class="pl-smi">Mse</span>]) <span class="pl-c">#ordering</span>
+
+    names(<span class="pl-smi">SeatsList</span>[[<span class="pl-smi">j</span>]])[length(<span class="pl-smi">seats</span>)<span class="pl-k">+</span><span class="pl-c1">1</span>]<span class="pl-k">&lt;-</span>paste0(<span class="pl-s"><span class="pl-pds">"</span>ordering for divisor step <span class="pl-pds">"</span></span>, <span class="pl-smi">step</span>[<span class="pl-smi">j</span>],<span class="pl-s"><span class="pl-pds">"</span> for <span class="pl-pds">"</span></span>, <span class="pl-smi">Mse</span>,<span class="pl-s"><span class="pl-pds">"</span> seats<span class="pl-pds">"</span></span>)
+
+
+  }
+
+
+  <span class="pl-k">return</span>(<span class="pl-smi">SeatsList</span>);
+
+}</pre></div>
+
+<p><strong>Examples of allocation</strong></p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-c">#Allocation example (step=2 Sainte-Laguë; step=1 D'Hondt)</span>
+<span class="pl-smi">votes</span> <span class="pl-k">&lt;-</span> sample(<span class="pl-c1">1</span><span class="pl-k">:</span><span class="pl-c1">1000</span>, <span class="pl-c1">3</span>) 
+<span class="pl-smi">votes</span></pre></div>
+
+<pre><code>## [1]  77 265 117
+</code></pre>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-c">#alloc(letters[1:3], votes, seats=5, step=1)</span>
+<span class="pl-c">#alloc(letters[1:3], votes, seats=c(3,5,4), step=2:1, threshold=0.5)</span>
+alloc(<span class="pl-c1">letters</span>[<span class="pl-c1">1</span><span class="pl-k">:</span><span class="pl-c1">3</span>], <span class="pl-smi">votes</span>, <span class="pl-c1">9</span>, c(<span class="pl-c1">1</span>,<span class="pl-c1">2</span>), .<span class="pl-c1">05</span>) <span class="pl-c">#print seats sum and allocation</span></pre></div>
+
+<pre><code>## [[1]]
+## [[1]]$`divisor step 1 for 9 seats`
+## 
+## a b c 
+## 1 6 2 
+## 
+## [[1]]$`ordering for divisor step 1 for 9 seats`
+##       [,1]
+##  [1,] "b" 
+##  [2,] "b" 
+##  [3,] "c" 
+##  [4,] "b" 
+##  [5,] "a" 
+##  [6,] "b" 
+##  [7,] "c" 
+##  [8,] "b" 
+##  [9,] "b" 
+## 
+## 
+## [[2]]
+## [[2]]$`divisor step 2 for 9 seats`
+## 
+## a b c 
+## 2 5 2 
+## 
+## [[2]]$`ordering for divisor step 2 for 9 seats`
+##       [,1]
+##  [1,] "b" 
+##  [2,] "c" 
+##  [3,] "b" 
+##  [4,] "a" 
+##  [5,] "b" 
+##  [6,] "c" 
+##  [7,] "b" 
+##  [8,] "b" 
+##  [9,] "a"
+</code></pre>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-en">generateDots</span> <span class="pl-k">&lt;-</span> <span class="pl-k">function</span>(<span class="pl-smi">dotsperside</span>, <span class="pl-v">method</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>lattice<span class="pl-pds">"</span></span>){
+
+  <span class="pl-smi">dots</span> <span class="pl-k">&lt;-</span> (<span class="pl-smi">dotsperside</span><span class="pl-k">+</span><span class="pl-c1">1</span>)<span class="pl-k">*</span>(<span class="pl-smi">dotsperside</span><span class="pl-k">+</span><span class="pl-c1">2</span>)<span class="pl-k">/</span><span class="pl-c1">2</span>
+
+  <span class="pl-k">if</span> (<span class="pl-smi">method</span> <span class="pl-k">==</span> <span class="pl-s"><span class="pl-pds">"</span>cartesian<span class="pl-pds">"</span></span>) {
+    <span class="pl-c">#Map Cartesian to Ternary to produce a homegeneous simulation</span>
+    <span class="pl-v">Rc</span> <span class="pl-k">=</span> <span class="pl-k">matrix</span>(runif(<span class="pl-c1">2</span><span class="pl-k">*</span><span class="pl-smi">dots</span>), <span class="pl-v">nrow</span><span class="pl-k">=</span><span class="pl-smi">dots</span>, <span class="pl-v">ncol</span><span class="pl-k">=</span><span class="pl-c1">2</span>)
+    <span class="pl-v">R</span>  <span class="pl-k">=</span> <span class="pl-k">matrix</span>(apply(<span class="pl-smi">Rc</span>,<span class="pl-c1">1</span>, <span class="pl-smi">CartesianToTernary</span>), <span class="pl-v">nrow</span><span class="pl-k">=</span><span class="pl-smi">dots</span>, <span class="pl-v">ncol</span><span class="pl-k">=</span><span class="pl-c1">3</span>, <span class="pl-v">byrow</span><span class="pl-k">=</span><span class="pl-c1">TRUE</span>)
+  }
+
+  <span class="pl-k">else</span> <span class="pl-k">if</span> (<span class="pl-smi">method</span> <span class="pl-k">==</span> <span class="pl-s"><span class="pl-pds">"</span>ternary<span class="pl-pds">"</span></span>) {
+    <span class="pl-c">#Ternary simulation. Projects points in[0,1]^3 to the sum(x)=1 hyperplane</span>
+    <span class="pl-c">#This creates way more points in the center than in the extremes</span>
+    <span class="pl-v">R</span> <span class="pl-k">=</span> <span class="pl-k">matrix</span>(runif(<span class="pl-c1">3</span><span class="pl-k">*</span><span class="pl-smi">dots</span>), <span class="pl-v">nrow</span><span class="pl-k">=</span><span class="pl-smi">dots</span>, <span class="pl-v">ncol</span><span class="pl-k">=</span><span class="pl-c1">3</span>)
+    <span class="pl-v">R</span> <span class="pl-k">=</span> prop.table(<span class="pl-smi">R</span>,<span class="pl-c1">1</span>) <span class="pl-c">#rows sum 1</span>
+  }
+
+  <span class="pl-k">else</span> <span class="pl-k">if</span> (<span class="pl-smi">method</span> <span class="pl-k">==</span> <span class="pl-s"><span class="pl-pds">"</span>lattice<span class="pl-pds">"</span></span>) {
+    <span class="pl-c">#lattice of dots</span>
+
+    <span class="pl-c">#read this if you want to use dots instead of dotsperside as input variable:</span>
+    <span class="pl-c">#if n is dotsperside</span>
+    <span class="pl-c">#dots &lt;- (n+1)*(n+2)/2  </span>
+    <span class="pl-c">#inverse calculation:</span>
+    <span class="pl-c">#n &lt;- floor((sqrt(8*dots+1)-3)/2) #exact</span>
+    <span class="pl-c">#n &lt;- floor(sqrt(2*dots)) #aprox</span>
+
+    <span class="pl-c">#then redefine number of dots</span>
+    <span class="pl-c">#dots &lt;- (n+1)*(n+2)/2</span>
+    <span class="pl-smi">R</span> <span class="pl-k">&lt;-</span> <span class="pl-k">matrix</span>(<span class="pl-c1">0</span>,<span class="pl-v">nrow</span><span class="pl-k">=</span><span class="pl-smi">dots</span>, <span class="pl-v">ncol</span><span class="pl-k">=</span><span class="pl-c1">3</span>)
+    <span class="pl-smi">i</span> <span class="pl-k">&lt;-</span> <span class="pl-c1">1</span>
+    <span class="pl-k">for</span> (<span class="pl-smi">x</span> <span class="pl-k">in</span> <span class="pl-c1">0</span><span class="pl-k">:</span><span class="pl-smi">dotsperside</span>){
+
+      <span class="pl-k">for</span> (<span class="pl-smi">y</span> <span class="pl-k">in</span> <span class="pl-c1">0</span><span class="pl-k">:</span>(<span class="pl-smi">dotsperside</span><span class="pl-k">-</span><span class="pl-smi">x</span>)){
+
+        <span class="pl-smi">R</span>[<span class="pl-smi">i</span>,]<span class="pl-k">&lt;-</span> c(<span class="pl-smi">x</span>,<span class="pl-smi">y</span>,<span class="pl-smi">dotsperside</span><span class="pl-k">-</span><span class="pl-smi">x</span><span class="pl-k">-</span><span class="pl-smi">y</span>)
+        <span class="pl-smi">i</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">i</span><span class="pl-k">+</span><span class="pl-c1">1</span>
+
+      }
+    }
+    <span class="pl-v">R</span> <span class="pl-k">=</span> prop.table(<span class="pl-smi">R</span>,<span class="pl-c1">1</span>) <span class="pl-c">#rows sum 1</span>
+  }
+
+  <span class="pl-k">return</span>(<span class="pl-smi">R</span>);
+
+}</pre></div>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-en">ManhattanNearest</span> <span class="pl-k">&lt;-</span> <span class="pl-k">function</span> (<span class="pl-smi">x</span>, <span class="pl-smi">seats</span>, <span class="pl-smi">nodes</span>, <span class="pl-smi">nnodes</span>) {
+
+  <span class="pl-v">Manhattan</span> <span class="pl-k">=</span> which.min(apply(abs(<span class="pl-smi">nodes</span><span class="pl-k">/</span><span class="pl-smi">seats</span> <span class="pl-k">-</span> rep(<span class="pl-c1">1</span>,<span class="pl-smi">nnodes</span>) <span class="pl-k">%*%</span> t(<span class="pl-smi">x</span>)),<span class="pl-c1">1</span>,<span class="pl-smi">sum</span>))
+
+  <span class="pl-k">return</span>(<span class="pl-smi">Manhattan</span>);
+
+}</pre></div>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-en">OrthodromicNearest</span> <span class="pl-k">&lt;-</span> <span class="pl-k">function</span> (<span class="pl-smi">x</span>, <span class="pl-smi">seats</span>, <span class="pl-smi">nodes</span>, <span class="pl-smi">nnodes</span>) {
+
+  <span class="pl-smi">normnodes</span> <span class="pl-k">&lt;-</span> normalizenodes(<span class="pl-smi">nodes</span>)
+  <span class="pl-v">Orthodromic</span> <span class="pl-k">=</span> which.min(acos((<span class="pl-smi">x</span><span class="pl-k">/</span>norm(t(<span class="pl-smi">x</span>),<span class="pl-s"><span class="pl-pds">"</span>F<span class="pl-pds">"</span></span>)) <span class="pl-k">%*%</span> t(as.matrix(<span class="pl-smi">normnodes</span>))))
+
+  <span class="pl-k">return</span>(<span class="pl-smi">Orthodromic</span>);
+
+}</pre></div>
+
+<p><strong>Data frame (more in the code)</strong></p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-en">SpatialData</span> <span class="pl-k">&lt;-</span> <span class="pl-k">function</span> (<span class="pl-smi">dotsperside</span>, <span class="pl-smi">seats</span>, <span class="pl-v">step</span><span class="pl-k">=</span><span class="pl-c1">1</span>, <span class="pl-v">threshold</span><span class="pl-k">=</span><span class="pl-c1">0</span>, <span class="pl-v">method</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>lattice<span class="pl-pds">"</span></span>) {
+
+
+  <span class="pl-c">#Generate random electoral results</span>
+  <span class="pl-smi">R</span> <span class="pl-k">&lt;-</span> generateDots(<span class="pl-smi">dotsperside</span>, <span class="pl-v">method</span><span class="pl-k">=</span><span class="pl-smi">method</span>)
+  <span class="pl-v">dots</span><span class="pl-k">=</span>dim(<span class="pl-smi">R</span>)[<span class="pl-c1">1</span>]  <span class="pl-c">#dots &lt;- (dotsperside+1)*(dotsperside+2)/2</span>
+
+  <span class="pl-v">Seats</span><span class="pl-k">=</span>max(<span class="pl-smi">seats</span>)
+
+  <span class="pl-c">#nodes</span>
+  <span class="pl-smi">nodes</span>  <span class="pl-k">&lt;-</span> as.matrix(generateNodes(<span class="pl-smi">Seats</span>)[,c(<span class="pl-s"><span class="pl-pds">"</span>x<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>y<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>z<span class="pl-pds">"</span></span>)])
+  <span class="pl-smi">nnodes</span> <span class="pl-k">&lt;-</span> (<span class="pl-smi">Seats</span><span class="pl-k">+</span><span class="pl-c1">1</span>)<span class="pl-k">*</span>(<span class="pl-smi">Seats</span><span class="pl-k">+</span><span class="pl-c1">2</span>)<span class="pl-k">/</span><span class="pl-c1">2</span>;
+
+  <span class="pl-c">#Indexes for Voronoi regions</span>
+  <span class="pl-v">Uniform</span>   <span class="pl-k">=</span> apply(<span class="pl-smi">R</span>, <span class="pl-c1">1</span>, <span class="pl-smi">UniformNearest</span>,   <span class="pl-v">seats</span><span class="pl-k">=</span><span class="pl-smi">Seats</span>, <span class="pl-v">nodes</span> <span class="pl-k">=</span> <span class="pl-smi">nodes</span>, <span class="pl-v">nnodes</span><span class="pl-k">=</span><span class="pl-smi">nnodes</span>)
+  <span class="pl-v">Manhattan</span> <span class="pl-k">=</span> apply(<span class="pl-smi">R</span>, <span class="pl-c1">1</span>, <span class="pl-smi">ManhattanNearest</span>, <span class="pl-v">seats</span><span class="pl-k">=</span><span class="pl-smi">Seats</span>, <span class="pl-v">nodes</span> <span class="pl-k">=</span> <span class="pl-smi">nodes</span>, <span class="pl-v">nnodes</span><span class="pl-k">=</span><span class="pl-smi">nnodes</span>)
+  <span class="pl-v">Euclid</span>    <span class="pl-k">=</span> apply(<span class="pl-smi">R</span>, <span class="pl-c1">1</span>, <span class="pl-smi">EuclidNearest</span>,    <span class="pl-v">seats</span><span class="pl-k">=</span><span class="pl-smi">Seats</span>, <span class="pl-v">nodes</span> <span class="pl-k">=</span> <span class="pl-smi">nodes</span>, <span class="pl-v">nnodes</span><span class="pl-k">=</span><span class="pl-smi">nnodes</span>)
+  <span class="pl-v">Orthodromic</span><span class="pl-k">=</span>apply(<span class="pl-smi">R</span>, <span class="pl-c1">1</span>, <span class="pl-smi">OrthodromicNearest</span>,<span class="pl-v">seats</span><span class="pl-k">=</span><span class="pl-smi">Seats</span>,<span class="pl-v">nodes</span> <span class="pl-k">=</span> <span class="pl-smi">nodes</span>, <span class="pl-v">nnodes</span><span class="pl-k">=</span><span class="pl-smi">nnodes</span>)
+
+
+  <span class="pl-c">#allocate seats</span>
+  <span class="pl-smi">AllocStructure</span> <span class="pl-k">&lt;-</span> apply(<span class="pl-smi">R</span>, <span class="pl-c1">1</span>, <span class="pl-k">function</span>(<span class="pl-smi">x</span>) alloc(as.character(<span class="pl-c1">1</span><span class="pl-k">:</span><span class="pl-c1">3</span>), <span class="pl-smi">x</span>, <span class="pl-smi">seats</span>, <span class="pl-smi">step</span>, <span class="pl-smi">threshold</span>))
+  <span class="pl-c">#input a vector of values for seats of to compute partial sums</span>
+
+  <span class="pl-v">df</span><span class="pl-k">=</span><span class="pl-k">list</span>() <span class="pl-c">#list of dataframes, one for each 'step' value</span>
+
+  <span class="pl-c">#loop for diferent 'step's</span>
+  <span class="pl-k">for</span> (<span class="pl-smi">j</span> <span class="pl-k">in</span> <span class="pl-c1">1</span><span class="pl-k">:</span>length(<span class="pl-smi">step</span>)){
+
+    <span class="pl-c">#allocation</span>
+    <span class="pl-v">AllocPartial</span><span class="pl-k">=</span><span class="pl-k">matrix</span>(<span class="pl-c1">0</span>,<span class="pl-smi">dots</span>,length(<span class="pl-smi">seats</span>))
+
+    <span class="pl-k">for</span> (<span class="pl-smi">i</span> <span class="pl-k">in</span> <span class="pl-c1">1</span><span class="pl-k">:</span>length(<span class="pl-smi">seats</span>)){
+
+      <span class="pl-v">S</span> <span class="pl-k">=</span> t(<span class="pl-k">matrix</span>(sapply(<span class="pl-smi">AllocStructure</span>, <span class="pl-k">function</span>(<span class="pl-smi">x</span>) <span class="pl-smi">x</span>[[<span class="pl-smi">j</span>]][[<span class="pl-smi">i</span>]]),<span class="pl-v">nrow</span><span class="pl-k">=</span><span class="pl-c1">3</span>,<span class="pl-v">ncol</span><span class="pl-k">=</span><span class="pl-smi">dots</span>))
+
+      <span class="pl-smi">nodes_sub</span> <span class="pl-k">&lt;-</span> as.matrix(generateNodes(<span class="pl-smi">seats</span>[<span class="pl-smi">i</span>])[,c(<span class="pl-s"><span class="pl-pds">"</span>x<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>y<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>z<span class="pl-pds">"</span></span>)])
+
+      <span class="pl-smi">AllocPartial</span>[,<span class="pl-smi">i</span>] <span class="pl-k">=</span> apply(<span class="pl-smi">S</span>, <span class="pl-c1">1</span>, <span class="pl-smi">AllocatedNode</span>, <span class="pl-v">nodes</span><span class="pl-k">=</span><span class="pl-smi">nodes_sub</span>, <span class="pl-v">nnodes</span><span class="pl-k">=</span>(<span class="pl-smi">seats</span>[<span class="pl-smi">i</span>]<span class="pl-k">+</span><span class="pl-c1">1</span>)<span class="pl-k">*</span>(<span class="pl-smi">seats</span>[<span class="pl-smi">i</span>]<span class="pl-k">+</span><span class="pl-c1">2</span>)<span class="pl-k">/</span><span class="pl-c1">2</span>)
+
+    }
+
+    <span class="pl-c">#allocation order</span>
+    <span class="pl-c">#computes allocation ordering for max(seats) in each step value</span>
+    <span class="pl-v">AllocOrder</span> <span class="pl-k">=</span> t(<span class="pl-k">matrix</span>(sapply(<span class="pl-smi">AllocStructure</span>, <span class="pl-k">function</span>(<span class="pl-smi">x</span>) as.integer(<span class="pl-smi">x</span>[[<span class="pl-smi">j</span>]][[length(<span class="pl-smi">seats</span>)<span class="pl-k">+</span><span class="pl-c1">1</span>]])),<span class="pl-v">nrow</span><span class="pl-k">=</span><span class="pl-smi">Seats</span>,<span class="pl-v">ncol</span><span class="pl-k">=</span><span class="pl-smi">dots</span>))
+    <span class="pl-v">vectorOrderCode</span><span class="pl-k">=</span>as.matrix(<span class="pl-c1">3</span><span class="pl-k">^</span>(<span class="pl-c1">0</span><span class="pl-k">:</span>(<span class="pl-smi">Seats</span><span class="pl-k">-</span><span class="pl-c1">1</span>)))
+    <span class="pl-c">#this coding highlights the last seats over the first ones</span>
+    <span class="pl-c"># so that there is contrast between adjacent regions</span>
+    <span class="pl-v">AllocOrderCode</span> <span class="pl-k">=</span> (<span class="pl-k">matrix</span>(<span class="pl-smi">AllocOrder</span>, <span class="pl-v">ncol</span><span class="pl-k">=</span><span class="pl-smi">Seats</span>)<span class="pl-k">-</span><span class="pl-c1">1</span>) <span class="pl-k">%*%</span> as.matrix(<span class="pl-smi">vectorOrderCode</span>)
+
+    <span class="pl-v">dfPartial</span><span class="pl-k">=</span>as.data.frame(<span class="pl-smi">AllocPartial</span>)
+    names(<span class="pl-smi">dfPartial</span>) <span class="pl-k">&lt;-</span> do.call(<span class="pl-smi">paste0</span>,as.data.frame(cbind(<span class="pl-s"><span class="pl-pds">"</span>All<span class="pl-pds">"</span></span>,<span class="pl-smi">seats</span>)))
+    names(<span class="pl-smi">dfPartial</span>)[which(<span class="pl-smi">seats</span><span class="pl-k">==</span><span class="pl-smi">Seats</span>)] <span class="pl-k">&lt;-</span> <span class="pl-s"><span class="pl-pds">"</span>Allocated<span class="pl-pds">"</span></span>
+
+    <span class="pl-c">#assembling a data frame</span>
+    <span class="pl-v">df0</span> <span class="pl-k">=</span> <span class="pl-k">data.frame</span>(
+
+
+      <span class="pl-v">x</span>             <span class="pl-k">=</span> as.matrix(<span class="pl-smi">R</span>[,<span class="pl-c1">1</span>]),
+      <span class="pl-v">y</span>             <span class="pl-k">=</span> as.matrix(<span class="pl-smi">R</span>[,<span class="pl-c1">2</span>]),
+      <span class="pl-v">z</span>             <span class="pl-k">=</span> as.matrix(<span class="pl-smi">R</span>[,<span class="pl-c1">3</span>]),
+
+      <span class="pl-v">Sx</span>            <span class="pl-k">=</span> <span class="pl-smi">S</span>[,<span class="pl-c1">1</span>],
+      <span class="pl-v">Sy</span>            <span class="pl-k">=</span> <span class="pl-smi">S</span>[,<span class="pl-c1">2</span>],
+      <span class="pl-v">Sz</span>            <span class="pl-k">=</span> <span class="pl-smi">S</span>[,<span class="pl-c1">3</span>],
+
+      <span class="pl-smi">Euclid</span>,
+      <span class="pl-smi">Manhattan</span>,
+      <span class="pl-smi">Uniform</span>,
+      <span class="pl-smi">Orthodromic</span>,
+
+      <span class="pl-v">Malapportionment</span> <span class="pl-k">=</span> <span class="pl-smi">AllocPartial</span>[<span class="pl-c1">1</span><span class="pl-k">:</span><span class="pl-smi">dots</span>,length(<span class="pl-smi">seats</span>)] <span class="pl-k">!=</span> <span class="pl-smi">Euclid</span>[<span class="pl-c1">1</span><span class="pl-k">:</span><span class="pl-smi">dots</span>],
+      <span class="pl-v">Malapportionment2</span> <span class="pl-k">=</span> <span class="pl-smi">AllocPartial</span>[<span class="pl-c1">1</span><span class="pl-k">:</span><span class="pl-smi">dots</span>,length(<span class="pl-smi">seats</span>)] <span class="pl-k">!=</span> <span class="pl-smi">Orthodromic</span>[<span class="pl-c1">1</span><span class="pl-k">:</span><span class="pl-smi">dots</span>],
+
+      <span class="pl-smi">AllocOrderCode</span>
+
+
+    )
+
+    <span class="pl-v">df0</span><span class="pl-k">=</span>cbind(<span class="pl-smi">df0</span>,<span class="pl-smi">dfPartial</span>)
+
+    <span class="pl-smi">df</span>[[<span class="pl-smi">j</span>]]<span class="pl-k">&lt;-</span><span class="pl-smi">df0</span>
+
+  } <span class="pl-c">#end of loop for different 'step's</span>
+
+
+  <span class="pl-k">return</span>(<span class="pl-smi">df</span>);
+
+}</pre></div>
+
+<p><strong>Settings</strong></p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-c">#presets</span>
+<span class="pl-v">seats</span><span class="pl-k">=</span><span class="pl-c1">2</span><span class="pl-k">:</span><span class="pl-c1">5</span>;
+<span class="pl-v">step</span><span class="pl-k">=</span>c(<span class="pl-c1">1</span>,<span class="pl-c1">2</span>); <span class="pl-c">#(2 Sainte-Laguë 1 D'Hondt)</span>
+<span class="pl-v">dotsperside</span><span class="pl-k">=</span><span class="pl-c1">199</span> <span class="pl-c">#dots &lt;- (dotsperside+1)*(dotsperside+2)/2</span>
+<span class="pl-v">threshold</span><span class="pl-k">=</span><span class="pl-c1">0</span></pre></div>
+
+<p><strong>Generating the data</strong></p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-c">#Spatial data</span>
+
+<span class="pl-smi">dots</span> <span class="pl-k">&lt;-</span> (<span class="pl-smi">dotsperside</span><span class="pl-k">+</span><span class="pl-c1">1</span>)<span class="pl-k">*</span>(<span class="pl-smi">dotsperside</span><span class="pl-k">+</span><span class="pl-c1">2</span>)<span class="pl-k">/</span><span class="pl-c1">2</span>
+
+<span class="pl-v">df</span> <span class="pl-k">=</span> SpatialData(<span class="pl-smi">dotsperside</span>, <span class="pl-smi">seats</span>, <span class="pl-smi">step</span>)
+
+<span class="pl-c">#df = SpatialData(dotsperside, 5, 1, threshold)</span>
+
+<span class="pl-c">#df = SpatialData(dotsperside, c(3,5,4), c(2,1), threshold)</span>
+
+<span class="pl-v">dfT</span> <span class="pl-k">=</span> SpatialData(<span class="pl-smi">dotsperside</span>, <span class="pl-v">seats</span><span class="pl-k">=</span><span class="pl-c1">5</span>, <span class="pl-v">threshold</span><span class="pl-k">=</span>.<span class="pl-c1">20</span>)
+
+
+head(<span class="pl-smi">df</span>[[<span class="pl-c1">1</span>]][sample(<span class="pl-c1">1</span><span class="pl-k">:</span><span class="pl-smi">dots</span>,<span class="pl-c1">10</span>,<span class="pl-v">replace</span><span class="pl-k">=</span><span class="pl-c1">F</span>),]) <span class="pl-c">#sample data for step=1 and seats=5</span></pre></div>
+
+<pre><code>##                x          y          z Sx Sy Sz Euclid Manhattan Uniform
+## 14193 0.45728643 0.43718593 0.10552764  3  2  0     14        14      14
+## 11800 0.35678392 0.42211055 0.22110553  2  2  1     14        14      14
+## 6773  0.18592965 0.19095477 0.62311558  1  1  3      8         8       8
+## 9930  0.28643216 0.62814070 0.08542714  1  4  0     15        15      15
+## 2176  0.05527638 0.15075377 0.79396985  0  0  5      2         2       2
+## 18466 0.71859296 0.09045226 0.19095477  4  0  1     19        19      19
+##       Orthodromic Malapportionment Malapportionment2 AllocOrderCode All2
+## 14193          14             TRUE              TRUE             30    5
+## 11800          14            FALSE             FALSE             46    5
+## 6773            8            FALSE             FALSE             53    1
+## 9930           15             TRUE              TRUE            112    3
+## 2176            2             TRUE              TRUE            242    1
+## 18466          19            FALSE             FALSE             54    6
+##       All3 All4 Allocated
+## 14193    9   12        18
+## 11800    6    8        14
+## 6773     1    2         8
+## 9930     7    9        11
+## 2176     1    1         1
+## 18466   10   13        19
+</code></pre>
+
+<p><strong>Electoral Space regions</strong></p>
+
+<p>The regions created by D'Hondt method aren't the same as the Voronoi regions created by the lattice of nodes. This method allocates more than 60% of the points correctly whereas Sainte-Laguë method is, in more than 90% of the points, similar to Voronoi. In D'Hondt the sizes of the regions are similar, but Sainte-Laguë produces regions centered on the nodes. Voronoi regions would be obtained by a method always allocating the nearest node. Those regions are similar if we use Euclidean, Manhattan or uniform distance. A Voronoi allocation method should solve the ties between two or more parties when the result is in a border in the same way the quotients methods do (by the total number of votes, and if the tie persists, at random).</p>
+
+<p>Quotients method produce regions with borders in angular sections. Voronoi borders are given by segment sections.</p>
+
+<p>We study here not only the result of allocation, but also the ordering in the allocation, and so we plot a diagram for the regions of different allocation orderings in the Electoral Space as subregions of the allocation ones.
+This diagram visualizes in a remarkable way the geometry of the Electoral Space.</p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-c">#Allocation</span>
+
+<span class="pl-smi">a1</span> <span class="pl-k">&lt;-</span> ggtern(<span class="pl-v">data</span><span class="pl-k">=</span><span class="pl-smi">df</span>[[<span class="pl-c1">1</span>]],aes(<span class="pl-smi">x</span>,<span class="pl-smi">y</span>,<span class="pl-smi">z</span>,<span class="pl-v">color</span><span class="pl-k">=</span>as.factor(<span class="pl-smi">Allocated</span>)))<span class="pl-k">+</span>
+  theme_bw()<span class="pl-k">+</span>
+  geom_point(<span class="pl-v">alpha</span><span class="pl-k">=</span><span class="pl-c1">1</span>)<span class="pl-k">+</span>
+  geom_point(<span class="pl-v">data</span><span class="pl-k">=</span><span class="pl-smi">NodesData</span>,aes(<span class="pl-smi">x</span>,<span class="pl-smi">y</span>,<span class="pl-smi">z</span>),<span class="pl-v">color</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>khaki2<span class="pl-pds">"</span></span>)<span class="pl-k">+</span>
+  geom_text(<span class="pl-v">data</span><span class="pl-k">=</span><span class="pl-smi">NodesData</span>,aes(<span class="pl-v">label</span><span class="pl-k">=</span><span class="pl-smi">label</span>), <span class="pl-v">color</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>grey30<span class="pl-pds">"</span></span>, <span class="pl-v">hjust</span><span class="pl-k">=</span><span class="pl-c1">0.5</span>, <span class="pl-v">vjust</span><span class="pl-k">=</span><span class="pl-k">-</span><span class="pl-c1">0.6</span>, <span class="pl-v">size</span><span class="pl-k">=</span><span class="pl-c1">4</span>)<span class="pl-k">+</span> 
+  labs(<span class="pl-v">x</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>X<span class="pl-pds">"</span></span>,<span class="pl-v">y</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>Y<span class="pl-pds">"</span></span>,<span class="pl-v">z</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>Z<span class="pl-pds">"</span></span>,<span class="pl-v">title</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>D'Hondt Allocation<span class="pl-pds">"</span></span>)<span class="pl-k">+</span>
+  <span class="pl-c">#scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)</span>
+  scale_colour_manual(<span class="pl-v">values</span><span class="pl-k">=</span>generateColors(<span class="pl-smi">colorRGB0</span>,max(<span class="pl-smi">seats</span>)), <span class="pl-v">guide</span><span class="pl-k">=</span><span class="pl-c1">FALSE</span>, <span class="pl-v">na.value</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>khaki2<span class="pl-pds">"</span></span>)
+
+<span class="pl-smi">a2</span> <span class="pl-k">&lt;-</span> ggtern(<span class="pl-v">data</span><span class="pl-k">=</span><span class="pl-smi">df</span>[[<span class="pl-c1">2</span>]],aes(<span class="pl-smi">x</span>,<span class="pl-smi">y</span>,<span class="pl-smi">z</span>,<span class="pl-v">color</span><span class="pl-k">=</span>as.factor(<span class="pl-smi">Allocated</span>)))<span class="pl-k">+</span>
+  theme_bw()<span class="pl-k">+</span>
+  geom_point(<span class="pl-v">alpha</span><span class="pl-k">=</span><span class="pl-c1">1</span>)<span class="pl-k">+</span>
+  geom_point(<span class="pl-v">data</span><span class="pl-k">=</span><span class="pl-smi">NodesData</span>,aes(<span class="pl-smi">x</span>,<span class="pl-smi">y</span>,<span class="pl-smi">z</span>),<span class="pl-v">color</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>khaki2<span class="pl-pds">"</span></span>)<span class="pl-k">+</span>
+  geom_text(<span class="pl-v">data</span><span class="pl-k">=</span><span class="pl-smi">NodesData</span>,aes(<span class="pl-v">label</span><span class="pl-k">=</span><span class="pl-smi">label</span>), <span class="pl-v">color</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>grey30<span class="pl-pds">"</span></span>, <span class="pl-v">hjust</span><span class="pl-k">=</span><span class="pl-c1">0.5</span>, <span class="pl-v">vjust</span><span class="pl-k">=</span><span class="pl-k">-</span><span class="pl-c1">0.6</span>, <span class="pl-v">size</span><span class="pl-k">=</span><span class="pl-c1">4</span>)<span class="pl-k">+</span> 
+  labs(<span class="pl-v">x</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>X<span class="pl-pds">"</span></span>,<span class="pl-v">y</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>Y<span class="pl-pds">"</span></span>,<span class="pl-v">z</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>Z<span class="pl-pds">"</span></span>,<span class="pl-v">title</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>Sainte-Laguë Allocation<span class="pl-pds">"</span></span>)<span class="pl-k">+</span>
+  <span class="pl-c">#scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)</span>
+  scale_colour_manual(<span class="pl-v">values</span><span class="pl-k">=</span>generateColors(<span class="pl-smi">colorRGB0</span>,max(<span class="pl-smi">seats</span>)), <span class="pl-v">guide</span><span class="pl-k">=</span><span class="pl-c1">FALSE</span>, <span class="pl-v">na.value</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>khaki2<span class="pl-pds">"</span></span>)
+
+ggtern.multi(<span class="pl-smi">a1</span>, <span class="pl-smi">a2</span>, <span class="pl-v">cols</span><span class="pl-k">=</span><span class="pl-c1">2</span>)</pre></div>
+
+<p><img src="ElectoralSpace_files/figure-html/unnamed-chunk-20-1.png" alt=""> </p>
+
+<p><img src="ElectoralSpace_files/figure-html/unnamed-chunk-21-1.png" alt=""> <img src="ElectoralSpace_files/figure-html/unnamed-chunk-21-2.png" alt=""> </p>
+
+<p><strong>Comparing Voronoi regions over different metrics</strong></p>
+
+<p>Euclid, Manhattan and Uniform distances produce exactly the same Voronoi regions. Orthodromic distance on the unit sphere produces different regions:</p>
+
+<pre><code>## [1] 1
+</code></pre>
+
+<pre><code>## [1] 1
+</code></pre>
+
+<pre><code>## [1] 1
+</code></pre>
+
+<pre><code>## [1] 0.9146269
+</code></pre>
+
+<p><img src="ElectoralSpace_files/figure-html/unnamed-chunk-22-1.png" alt=""> </p>
+
+<p><strong>Size of the regions</strong></p>
+
+<p><img src="ElectoralSpace_files/figure-html/unnamed-chunk-23-1.png" alt=""> </p>
+
+<p><strong>Proportion of results not allocated to the nearest node</strong></p>
+
+<p><img src="ElectoralSpace_files/figure-html/unnamed-chunk-24-1.png" alt=""> <img src="ElectoralSpace_files/figure-html/unnamed-chunk-24-2.png" alt=""> </p>
+
+<pre><code>## [1] 0.3691045
+</code></pre>
+
+<pre><code>## [1] 0.08014925
+</code></pre>
+
+<pre><code>## [1] 0.2856219
+</code></pre>
+
+<pre><code>## [1] 0.08333333
+</code></pre>
+
+<p><strong>Effect of a threshold on the regions</strong></p>
+
+<p><img src="ElectoralSpace_files/figure-html/unnamed-chunk-25-1.png" alt=""> </p>
+
+<p><strong>Regions for different orderings in the allocation</strong></p>
+
+<p><img src="ElectoralSpace_files/figure-html/unnamed-chunk-27-1.png" alt=""> </p>
+
+<p><strong>Partial sums in the allocation</strong></p>
+
+<p><img src="ElectoralSpace_files/figure-html/unnamed-chunk-28-1.png" alt=""> </p>
+
+<p><strong>History of elections</strong></p>
+
+<p>We can also draw historic data from past elections on the diagrams.</p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-en">generateSpline</span> <span class="pl-k">&lt;-</span> <span class="pl-k">function</span> (<span class="pl-smi">dfvotes</span>, <span class="pl-v">method</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>natural<span class="pl-pds">"</span></span>) {
+
+  <span class="pl-c">#generates a spline curve through elections history</span>
+
+  <span class="pl-v">nelect</span> <span class="pl-k">=</span> dim(<span class="pl-smi">dfvotes</span>)[<span class="pl-c1">1</span>]
+
+  <span class="pl-smi">splineX</span> <span class="pl-k">&lt;-</span> spline(<span class="pl-v">x</span><span class="pl-k">=</span><span class="pl-c1">1</span><span class="pl-k">:</span><span class="pl-smi">nelect</span>,<span class="pl-v">y</span><span class="pl-k">=</span><span class="pl-smi">dfvotes</span><span class="pl-k">$</span><span class="pl-smi">x</span>, <span class="pl-v">method</span><span class="pl-k">=</span><span class="pl-smi">method</span>)
+  <span class="pl-smi">splineY</span> <span class="pl-k">&lt;-</span> spline(<span class="pl-v">x</span><span class="pl-k">=</span><span class="pl-c1">1</span><span class="pl-k">:</span><span class="pl-smi">nelect</span>,<span class="pl-v">y</span><span class="pl-k">=</span><span class="pl-smi">dfvotes</span><span class="pl-k">$</span><span class="pl-smi">y</span>, <span class="pl-v">method</span><span class="pl-k">=</span><span class="pl-smi">method</span>)
+
+  <span class="pl-v">dfSpline</span> <span class="pl-k">=</span> <span class="pl-k">matrix</span>(<span class="pl-c1">0</span>, length(<span class="pl-smi">splineX</span>[[<span class="pl-c1">1</span>]]), <span class="pl-c1">3</span>)
+  <span class="pl-smi">dfSpline</span>[,<span class="pl-c1">1</span>] <span class="pl-k">&lt;-</span> <span class="pl-smi">splineX</span>[[<span class="pl-c1">2</span>]]
+  <span class="pl-smi">dfSpline</span>[,<span class="pl-c1">2</span>] <span class="pl-k">&lt;-</span> <span class="pl-smi">splineY</span>[[<span class="pl-c1">2</span>]]
+  <span class="pl-smi">dfSpline</span>[,<span class="pl-c1">3</span>] <span class="pl-k">&lt;-</span> <span class="pl-c1">1</span><span class="pl-k">-</span><span class="pl-smi">dfSpline</span>[,<span class="pl-c1">1</span>]<span class="pl-k">-</span><span class="pl-smi">dfSpline</span>[,<span class="pl-c1">2</span>]
+  <span class="pl-v">dfSpline</span> <span class="pl-k">=</span> as.data.frame(<span class="pl-smi">dfSpline</span>)
+  names(<span class="pl-smi">dfSpline</span>) <span class="pl-k">&lt;-</span> <span class="pl-c1">letters</span>[<span class="pl-c1">24</span><span class="pl-k">:</span><span class="pl-c1">26</span>]
+
+  <span class="pl-k">return</span>(<span class="pl-smi">dfSpline</span>);
+
+}</pre></div>
+
+<div class="highlight highlight-source-r"><pre>ggtern(<span class="pl-v">data</span><span class="pl-k">=</span><span class="pl-smi">df</span>[[<span class="pl-c1">1</span>]],aes(<span class="pl-smi">x</span>,<span class="pl-smi">y</span>,<span class="pl-smi">z</span>,<span class="pl-v">color</span><span class="pl-k">=</span>as.factor(<span class="pl-smi">Allocated</span>)))<span class="pl-k">+</span>
+  <span class="pl-c">#theme_rgbw()+</span>
+  theme_bw()<span class="pl-k">+</span>
+  geom_point(<span class="pl-v">alpha</span><span class="pl-k">=</span><span class="pl-c1">1</span>)<span class="pl-k">+</span>
+  geom_point(<span class="pl-v">data</span><span class="pl-k">=</span><span class="pl-smi">NodesData</span>,aes(<span class="pl-smi">x</span>,<span class="pl-smi">y</span>,<span class="pl-smi">z</span>),<span class="pl-v">color</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>khaki2<span class="pl-pds">"</span></span>)<span class="pl-k">+</span>
+  geom_point(<span class="pl-v">data</span><span class="pl-k">=</span><span class="pl-smi">dfvotes</span>,aes(<span class="pl-smi">x</span>,<span class="pl-smi">y</span>,<span class="pl-smi">z</span>),<span class="pl-v">color</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>orange<span class="pl-pds">"</span></span>,<span class="pl-v">alpha</span><span class="pl-k">=</span><span class="pl-c1">1</span>)<span class="pl-k">+</span>
+  geom_text(<span class="pl-v">data</span><span class="pl-k">=</span><span class="pl-smi">NodesData</span>,aes(<span class="pl-v">label</span><span class="pl-k">=</span><span class="pl-smi">label</span>), <span class="pl-v">color</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>grey30<span class="pl-pds">"</span></span>, <span class="pl-v">hjust</span><span class="pl-k">=</span><span class="pl-c1">0.5</span>, <span class="pl-v">vjust</span><span class="pl-k">=</span><span class="pl-k">-</span><span class="pl-c1">0.6</span>, <span class="pl-v">size</span><span class="pl-k">=</span><span class="pl-c1">4</span>)<span class="pl-k">+</span> 
+  geom_text(<span class="pl-v">data</span><span class="pl-k">=</span><span class="pl-smi">dfvotes</span>,aes(<span class="pl-v">label</span><span class="pl-k">=</span><span class="pl-smi">label</span>), <span class="pl-v">color</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>slateblue4<span class="pl-pds">"</span></span>, <span class="pl-v">hjust</span><span class="pl-k">=</span><span class="pl-c1">1.2</span>, <span class="pl-v">vjust</span><span class="pl-k">=</span><span class="pl-c1">0.3</span>, <span class="pl-v">size</span><span class="pl-k">=</span><span class="pl-c1">3</span>, <span class="pl-v">angle</span><span class="pl-k">=</span><span class="pl-c1">90</span>)<span class="pl-k">+</span> 
+  geom_path(<span class="pl-v">data</span><span class="pl-k">=</span><span class="pl-smi">dfSpline</span>,<span class="pl-v">colour</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>darkgreen<span class="pl-pds">"</span></span>, <span class="pl-v">linetype</span><span class="pl-k">=</span><span class="pl-c1">1</span>, <span class="pl-v">size</span><span class="pl-k">=</span><span class="pl-c1">1</span>)<span class="pl-k">+</span> 
+  <span class="pl-c">#geom_path(data=dfvotes,colour="white", linetype=1, size=0.7)+ </span>
+  labs(<span class="pl-v">x</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>SocLib<span class="pl-pds">"</span></span>,<span class="pl-v">y</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>SocCom<span class="pl-pds">"</span></span>,<span class="pl-v">z</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>LibCon<span class="pl-pds">"</span></span>,<span class="pl-v">title</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>Past Elections<span class="pl-pds">"</span></span>)<span class="pl-k">+</span>
+  <span class="pl-c">#scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)</span>
+  scale_colour_manual(<span class="pl-v">values</span><span class="pl-k">=</span>generateColors(<span class="pl-smi">colorRGB0</span>,max(<span class="pl-smi">seats</span>)), <span class="pl-v">guide</span><span class="pl-k">=</span><span class="pl-c1">FALSE</span>, <span class="pl-v">na.value</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>khaki2<span class="pl-pds">"</span></span>)</pre></div>
+
+<p><img src="ElectoralSpace_files/figure-html/unnamed-chunk-32-1.png" alt=""> </p>
+
+<p><strong>Diversity measures: entropy and effective number of parties</strong></p>
+
+<p>The diagrams below show vote disperion an camera dispersion measured with different diversity indexes: Shannon entropy and Laakso-Taagepera effective number of parties.</p>
+
+<p><img src="ElectoralSpace_files/figure-html/unnamed-chunk-33-1.png" alt=""> <img src="ElectoralSpace_files/figure-html/unnamed-chunk-33-2.png" alt=""> </p>
+
+<p><strong>Largest remainder method with Hare Quota is similar to Voronoi allocation</strong></p>
+
+<p>Hare quota gives the nearest allocation to each share of votes. Its allocation regions are the Voronoi regions given by the seat allocation nodes:</p>
+
+<div class="highlight highlight-source-r"><pre><span class="pl-en">alloc</span> <span class="pl-k">&lt;-</span> <span class="pl-k">function</span>(<span class="pl-smi">parties</span>, <span class="pl-smi">votes</span>, <span class="pl-smi">seats</span>, <span class="pl-v">step</span><span class="pl-k">=</span><span class="pl-c1">1</span>, <span class="pl-v">threshold</span><span class="pl-k">=</span><span class="pl-c1">0</span>){
+
+  <span class="pl-c">#function for Hare Quota seat allocation</span>
+  <span class="pl-v">votes</span><span class="pl-k">=</span><span class="pl-smi">votes</span><span class="pl-k">*</span>(<span class="pl-smi">votes</span><span class="pl-k">&gt;</span><span class="pl-k">=</span>(<span class="pl-smi">threshold</span><span class="pl-k">*</span>sum(<span class="pl-smi">votes</span>)))
+
+  <span class="pl-v">nparties</span> <span class="pl-k">=</span> length(<span class="pl-smi">votes</span>)
+
+  <span class="pl-v">quota</span> <span class="pl-k">=</span> sum(<span class="pl-smi">votes</span>)<span class="pl-k">/</span><span class="pl-smi">seats</span>
+  <span class="pl-v">QAllocation</span> <span class="pl-k">=</span> floor(<span class="pl-smi">votes</span><span class="pl-k">/</span><span class="pl-smi">quota</span>)
+  <span class="pl-v">rests</span> <span class="pl-k">=</span> <span class="pl-smi">votes</span> <span class="pl-k">%%</span> <span class="pl-smi">quota</span>
+
+  <span class="pl-smi">qtable</span> <span class="pl-k">&lt;-</span> <span class="pl-k">data.frame</span>(
+    <span class="pl-v">parties</span> <span class="pl-k">=</span> <span class="pl-c1">1</span><span class="pl-k">:</span><span class="pl-smi">nparties</span>,
+    <span class="pl-smi">rests</span>,
+    <span class="pl-smi">votes</span>
+  )
+
+  <span class="pl-k">if</span> (<span class="pl-smi">seats</span><span class="pl-k">&gt;</span>sum(<span class="pl-smi">QAllocation</span>)){
+
+    <span class="pl-smi">largestRestsParties</span> <span class="pl-k">&lt;-</span> <span class="pl-smi">qtable</span>[order(<span class="pl-k">-</span><span class="pl-smi">rests</span>,<span class="pl-k">-</span><span class="pl-smi">votes</span>),]<span class="pl-k">$</span><span class="pl-smi">parties</span>[<span class="pl-c1">1</span><span class="pl-k">:</span>(<span class="pl-smi">seats</span> <span class="pl-k">-</span> sum(<span class="pl-smi">QAllocation</span>))]
+    <span class="pl-smi">largestRestsLogic</span> <span class="pl-k">&lt;-</span> is.element(<span class="pl-c1">1</span><span class="pl-k">:</span><span class="pl-smi">nparties</span>, <span class="pl-smi">largestRestsParties</span>)
+
+  } <span class="pl-k">else</span> {<span class="pl-smi">largestRestsLogic</span> <span class="pl-k">&lt;-</span> <span class="pl-k">matrix</span>(<span class="pl-c1">F</span>,<span class="pl-c1">1</span>,<span class="pl-smi">nparties</span>)}
+
+
+  <span class="pl-v">Allocation</span> <span class="pl-k">=</span> <span class="pl-k">list</span>(<span class="pl-k">list</span>(<span class="pl-smi">QAllocation</span> <span class="pl-k">+</span> <span class="pl-smi">largestRestsLogic</span>, <span class="pl-k">matrix</span>(<span class="pl-smi">parties</span>[<span class="pl-c1">1</span>],<span class="pl-smi">seats</span>)))
+  <span class="pl-c">#ordering is not taken into account</span>
+
+  <span class="pl-k">return</span>(<span class="pl-smi">Allocation</span>);
+
+}</pre></div>
+
+<p><img src="ElectoralSpace_files/figure-html/unnamed-chunk-36-1.png" alt=""> <img src="ElectoralSpace_files/figure-html/unnamed-chunk-36-2.png" alt=""> </p>
+
+<pre><code>## [1] 0.004925373
+</code></pre>
+
+<pre><code>## [1] 0.08835821
+</code></pre>
+
+<p>Differences are only observed in the boundaries because we have not considered the way ties break when using the distance functions.</p>
+
+<p>Hare quota is pretty close to Sainte-Laguë and Droop quota is so to D'Hondt, as can be seen in the next diagrams.</p>
+
+<p><img src="ElectoralSpace_files/figure-html/unnamed-chunk-37-1.png" alt=""> </p>
+
+<pre><code>## [1] 0.8931343
+</code></pre>
+
+<pre><code>## [1] 0.9232836
+</code></pre>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/ismaelsb/ElectoralSpace">Electoral Space</a> is maintained by <a href="https://github.com/ismaelsb">ismaelsb</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>

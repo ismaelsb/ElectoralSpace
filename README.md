@@ -24,7 +24,7 @@ It can be observed that the Largest remainder method with Hare Quota gives the n
 
 Hare quota is pretty close to Sainte-Laguë and Droop quota is so to D'Hondt as can be seen in the next diagrams.
 
-In http://rpubs.com/ismaelsb/ElectoralSpace and https://github.com/ismaelsb/ElectoralSpace/blob/master/ElectoralSpace.md we present the results.
+In http://ismaelsb.github.io/ElectoralSpace/ , http://rpubs.com/ismaelsb/ElectoralSpace and https://github.com/ismaelsb/ElectoralSpace/blob/master/ElectoralSpace.md we present the results.
 
 The code used for these computations and representations is available here: https://github.com/ismaelsb/ElectoralSpace/blob/master/ElectoralSpace.R
 
@@ -58,7 +58,7 @@ Se puede observar que el método de los restos mayores con el cociente Hare da l
 
 El cociente Hare es bastante parecido a Sainte-Laguë y el cociente Droop lo es a D'Hondt, como puede verse en los siguientes diagramas.
 
-En http://rpubs.com/ismaelsb/ElectoralSpace o en https://github.com/ismaelsb/ElectoralSpace/blob/master/ElectoralSpace.md se presentan los resultados 
+En http://ismaelsb.github.io/ElectoralSpace/ , http://rpubs.com/ismaelsb/ElectoralSpace o en https://github.com/ismaelsb/ElectoralSpace/blob/master/ElectoralSpace.md se presentan los resultados 
 
 El código utilizado para estos cálculos y representaciones se encuentra en este enlace https://github.com/ismaelsb/ElectoralSpace/blob/master/ElectoralSpace.R
 

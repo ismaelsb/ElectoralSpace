@@ -1,6 +1,6 @@
 # Electoral Space
 
-## Geometric visualization for proportional electoral methodes.
+## Geometric visualization for proportional electoral methods.
 
 Code available here: <https://github.com/ismaelsb/ElectoralSpace>
  

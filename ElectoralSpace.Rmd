@@ -1,5 +1,5 @@
 ---
-title: "Electoral Space"
+title: "A Tomography of Electoral Methods"
 output:
   html_document:
     fig_width: 9
@@ -15,9 +15,7 @@ Code available here: <https://github.com/ismaelsb/ElectoralSpace>
  
 Interactive web app: <https://ismaelsb.shinyapps.io/ElectoralSpace>
 
-**Introduction**
 
-In order to represent 3 variables in 2 dimensions in an only way for each set of proportional values, we can use a ternary diagram. You can see this diagram as the projection of the points from the positive quadrant in space onto the hyperplane of points whose sum of coodinates equals 1. The image of this projection is an equilateral triangle. In the same way we can represent two values in a segment and four values in a tetrahedron. This representation is also known by the name of barycentric coordinates in a simplex.
 
 ```{r, echo = F, results='hide', message=FALSE, warning=FALSE}
 #Uncommmet to install ggtern from an online CRAN repository:
@@ -28,22 +26,6 @@ library(ggtern)
 set.seed(156) #fix random generation
 
 ```
-
-```{r, echo = F}
-#plot example
-ggtern(data=data.frame(x=0.2,y=0.3,z=0.5),aes(x,y,z))+
-  theme_arrowdefault()+geom_point()
-
-```
-
-
-**Electoral allocation functions (more in the code)**
-
-A diagram like these can be used to represent the results in political elections in which the votes are shared between 3 parties. Each point in the triangle is represented by three coordinates corresponding the share of votes received by each party. We have a determined number of seats to allocate, and each posible sharing is represented by a highlighted dot (a node) in the triangle and a label with its result. The electoral method would allocate to each electoral result one of the possible sharings of seats. The regions of points to which the same sharing is allocated are represented in the same color. For two parties we'd use a segment. For four, a tetrahedron. The diagram is usefull for visualizing possible seats at stake when the results are close to the borders between two or more regions.
-
-We use a function for electoral allocation for different proportional methods and an optional entry threshold.
-
-We also show some of the functions used to compute allocations or to plot the diagrams.
 
 ```{r, echo = F}
 
@@ -75,7 +57,7 @@ generateNodes <- function(seats){
 
 ```
 
-```{r, echo = T}
+```{r, echo = F}
 
 generateColors <- function (colorRGB, seats) {
   
@@ -117,19 +99,9 @@ colorRGB0 <- colorRGB3 #choose color palette
 seats=5
 NodesData <- generateNodes(max(seats))
 
-#plot nodes for seat allocation
-ggtern(data=NodesData,aes(x,y,z,color=as.factor(index)))+
-  theme_minimal()+
-  geom_point(alpha=1, size=5)+
-  geom_text(aes(label=label,color=as.factor(index)), hjust=0.5, vjust=-0.6, size=4)+ 
-  labs(x="X",y="Y",z="Z",title="Nodes for seat allocation")+
-  #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
-  scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
-
-
 ```
 
-```{r, echo = T}
+```{r, echo = F}
 
 alloc <- function(parties, votes, seats, step, threshold=0){
   
@@ -187,20 +159,7 @@ alloc <- function(parties, votes, seats, step, threshold=0){
 
 ```
 
-**Examples of allocation**
-
-```{r, echo = T}
-
-#Allocation example (step=2 Sainte-Laguë; step=1 D'Hondt)
-votes <- sample(1:1000, 3) 
-votes
-#alloc(letters[1:3], votes, seats=5, step=1)
-#alloc(letters[1:3], votes, seats=c(3,5,4), step=2:1, threshold=0.5)
-alloc(letters[1:3], votes, 9, c(1,2), .05) #print seats sum and allocation
-
-```
-
-```{r, echo = T}
+```{r, echo = F}
 
 generateDots <- function(dotsperside, method="lattice"){
   
@@ -297,7 +256,7 @@ UniformNearest <- function (x, seats, nodes, nnodes) {
 
 ```
 
-```{r, echo = T}
+```{r, echo = F}
 
 ManhattanNearest <- function (x, seats, nodes, nnodes) {
   
@@ -321,7 +280,7 @@ EuclidNearest <- function (x, seats, nodes, nnodes) {
 
 ```
 
-```{r, echo = T}
+```{r, echo = F}
 
 OrthodromicNearest <- function (x, seats, nodes, nnodes) {
   
@@ -346,9 +305,44 @@ AllocatedNode <- function (y, nodes, nnodes) {
 
 ```
 
-**Data frame (more in the code)**
+```{r, echo = F}
 
-```{r, echo = T}
+generateOrderColors <- function (colorRGB, seats, validCodes=TRUE) {
+  
+  #generate order color from alloc order codes
+  
+  #extract allocation order from allocation order codes:
+  OrderCode <-as.matrix(0:(3^seats-1))
+  
+  OrderRests <- t(matrix(apply(OrderCode, 1, function(x) x %% (3^(1:seats))),ncol=3^seats, nrow=seats))
+  #(this is vectorial for OrderRests <- OrderCode %% (3^(1:seats))  )
+  
+  Order_from_code <- (cbind(OrderRests,0)-cbind(0,OrderRests))[,1:seats]/t(matrix(rep(3^(0:(seats-1)),3^seats),ncol=3^seats,nrow=seats))+1
+  vectorOrderCode3 <- 2^(0:(seats-1))
+  #decimal codes for colors in nodes
+  Code3 = cbind((Order_from_code == 1)%*%as.matrix(vectorOrderCode3),
+                (Order_from_code == 2)%*%as.matrix(vectorOrderCode3),
+                (Order_from_code == 3)%*%as.matrix(vectorOrderCode3))
+  
+  #linear transformation to fixed extreme colors
+  CodeDecRGB = floor(Code3%*%matrix(colorRGB,3,3, byrow=T)/2^seats)
+  
+  #hex codes for colors in nodes
+  CodeRGB = cbind(matrix("#",3^seats),format(as.hexmode(CodeDecRGB[,1]),width=2),format(as.hexmode(CodeDecRGB[,2]),width=2),format(as.hexmode(CodeDecRGB[,3]),width=2))
+  CodeRGB = do.call("paste0",as.data.frame(CodeRGB))
+  
+  #values = CodeRGB[validCodes]
+  values = CodeRGB[c(validCodes, 3^seats)] #added one more color bc scale_color_manual() demanded one more color
+  #values = CodeRGB[c(1, validCodes)] #added one more color bc scale_color_manual() demanded one more color
+  
+  
+  return(values);
+  
+}
+
+```
+
+```{r, echo = F}
 
 SpatialData <- function (dotsperside, seats, step=1, threshold=0, method="lattice") {
   
@@ -442,9 +436,7 @@ SpatialData <- function (dotsperside, seats, step=1, threshold=0, method="lattic
 
 ```
 
-**Settings**
-
-```{r, echo = T}
+```{r, echo = F}
 
 #presets
 seats=2:5;
@@ -454,9 +446,7 @@ threshold=0
 
 ```
 
-**Generating the data**
-
-```{r, echo = T}
+```{r, echo = F}
 
 #Spatial data
 
@@ -471,47 +461,38 @@ df = SpatialData(dotsperside, seats, step)
 dfT = SpatialData(dotsperside, seats=5, threshold=.20)
 
 
-head(df[[1]][sample(1:dots,10,replace=F),]) #sample data for step=1 and seats=5
+#head(df[[1]][sample(1:dots,10,replace=F),]) #sample data for step=1 and seats=5
 
 ```
 
-**Electoral Space regions**
+**Drawing the electoral regions**
 
-The regions created by D'Hondt method aren't the same as the Voronoi regions created by the lattice of nodes. This method allocates more than 60% of the points correctly whereas Sainte-Laguë method is, in more than 90% of the points, similar to Voronoi. In D'Hondt the sizes of the regions are similar, but Sainte-Laguë produces regions centered on the nodes. Voronoi regions would be obtained by a method always allocating the nearest node. Those regions are similar if we use Euclidean, Manhattan or uniform distance. A Voronoi allocation method should solve the ties between two or more parties when the result is in a border in the same way the quotients methods do (by the total number of votes, and if the tie persists, at random).
+When talking about the electoral system and electoral reforms there is mainly two kinds of systems: the majoritarian and the proportional systems. In majoritarian electoral systems only a candidate and party is represented in each district. This leaves minority parties, or parties whose voters are not concentrated in a territory, unrepresented. Proportional systems though tend to concede representation to more parties. In any of the cases, electoral methods don't belong to a pure kind, so there is a continuum of shades and people often complain about the porportionality of the systems and demand 'one person, one vote'. They may be wanting equality in the value of their votes and they usually want this to get achieved by allocating seats to territories by their population. There are always problems with the numbers of seats allocated to the less populated territories. But there is an even more important and complex problem: the ability of the system to represent minority parties, primarily when their voters are dispersed. This can be solved if all districts in the elections have a considerable number of seats, for if we have districts with a few seats, there is no way without wasting the votes of lesser parties.
 
-Quotients method produce regions with borders in angular sections. Voronoi borders are given by segment sections.
+Knowing all this we can still do a little engineering with the mathematical method for the partitions of seats. The choose of a method can be blamed for the overall unfairness of the electoral system, but don't let us tarnish the memory of Victor d'Hondt for the illness of the whole system. At this point let's wonder how a fair discrete partition method should be. It must be an axiom that for each sharing of votes identical to the proportions of a discrete (integer) partition summing the total number of seats, this discrete partition should be allocated. Moreover, I say the proportion of seats allocated to each party and the proportion of votes to each party in the districts must be as close as possible.
 
-We study here not only the result of allocation, but also the ordering in the allocation, and so we plot a diagram for the regions of different allocation orderings in the Electoral Space as subregions of the allocation ones.
-This diagram visualizes in a remarkable way the geometry of the Electoral Space.
+Let's figure out a 'drawing' technique for electoral methods. We are restricted to two dimesions (on a paper or a screen). If we draw all the posible outcomes of an election with only two parties we can colour the zones in which the configuration of the partition of the seats is the same, with the same colour, from, say, red to blue, passing through the intermediate shades. Soon we notice that proportional outcomes give the same allocation of seats, so we don't need to paint all the points, just a line segment, from 0% to 100% of the votes obtained by one of the parties. Drawing a line won't give us plenty of information, and we still have one dimension left. We can try to plot the results for three parties, one point for each set of proportional electoral outcomes. Thus we get a ternary diagram representing the projective space for the positive quadrant of the tridimensional space, this is the so called 3-simplex and the barycentric coordinates. If we color the regions of electoral results by its closeness to a seat allocation node, it should be something like this:
 
-```{r, echo = T}
-
-#Allocation
-
-a1 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Allocated)))+
-  theme_bw()+
-  geom_point(alpha=1)+
-  geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
-  geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
-  labs(x="X",y="Y",z="Z",title="D'Hondt Allocation")+
-  #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
-  scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
-
-a2 <- ggtern(data=df[[2]],aes(x,y,z,color=as.factor(Allocated)))+
-  theme_bw()+
-  geom_point(alpha=1)+
-  geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
-  geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
-  labs(x="X",y="Y",z="Z",title="Sainte-Laguë Allocation")+
-  #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
-  scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
-
-ggtern.multi(a1, a2, cols=2)
-
+```{r, echo = F}
+#plot example
+ex1 <- ggtern(data=data.frame(x=0.2,y=0.3,z=0.5),aes(x,y,z))+
+  theme_arrowdefault()+geom_point()
 
 ```
 
 ```{r, echo = F}
+
+
+#plot nodes for seat allocation
+n1 <- ggtern(data=NodesData,aes(x,y,z,color=as.factor(index)))+
+  theme_minimal()+
+  geom_point(alpha=1, size=5)+
+  geom_text(aes(label=label,color=as.factor(index)), hjust=0.5, vjust=-0.6, size=4)+ 
+  labs(x="X",y="Y",z="Z",title="Nodes for seat allocation")+
+  #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+  scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
+
+ggtern.multi(ex1, n1, cols=2)
 
 #Voronoi
 
@@ -535,14 +516,27 @@ v2 <- ggtern(data=df[[2]],aes(x,y,z,color=as.factor(Orthodromic)))+
   #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
   scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
 
-ggtern.multi(a2, v1, cols=2)
-ggtern.multi(a2, v2, cols=2)
+#Differences between planar and orthodromic Voronoi regions
+
+v12 <- ggtern(data=df[[1]],aes(x,y,z,color=Malapportionment!=Malapportionment2)) +
+  theme_rgbw() +
+  geom_point(alpha=0.8) +
+  geom_point(data=NodesData,aes(x,y,z),alpha=0.8,color="grey30")+
+  labs(x="X",y="Y",z="Z",title="Planar vs Orthodromic regions")+
+  #scale_colour_grey(na.value = "black", guide = FALSE)
+  scale_colour_brewer(palette = "Greys", na.value = "grey60", guide = FALSE)
+
+
+ggtern.multi(v1, v2, cols=2)
+ggtern.multi(v12, cols=1)
 
 ```
 
-**Comparing Voronoi regions over different metrics**
+For four parties we'd need a tetrahedron. The diagram is usefull for visualizing possible seats at stake when the results are close to the borders between two or more regions.
 
-Euclid, Manhattan and Uniform distances produce exactly the same Voronoi regions. Orthodromic distance on the unit sphere produces different regions:
+We have used different types of distances for the measure of the 'closeness'. Different distances can produce different Voronoi regions: those created by distances on the projective space of the simplex (Euclidean, Manhattan and Uniform) give the same regions (first diagram), and those created by the orthodromic distance on the unit sphere (normalized vectors) give the regions of the second diagram.
+
+Voronoi regions would be obtained by a method always allocating the nearest node. A Voronoi allocation method should solve the ties between two or more parties when the result is in a border in the same way the quotients methods do (by the total number of votes, and if the tie persists, at random).
 
 ```{r, echo = F}
 
@@ -554,35 +548,28 @@ sum(df[[1]]$Uniform[1:dots]==df[[1]]$Euclid[1:dots])/dots
 #Differences between planar and orthodromic Voronoi regions
 sum(df[[1]]$Euclid[1:dots]==df[[1]]$Orthodromic[1:dots])/dots
 
-ggtern(data=df[[1]],aes(x,y,z,color=Malapportionment!=Malapportionment2)) +
-  theme_rgbw() +
-  geom_point(alpha=0.8) +
-  geom_point(data=NodesData,aes(x,y,z),alpha=0.8,color="grey30")+
-  labs(x="X",y="Y",z="Z",title="Planar vs Orthodromic regions")+
-  #scale_colour_grey(na.value = "black", guide = FALSE)
-  scale_colour_brewer(palette = "Greys", na.value = "grey60", guide = FALSE)
 
 ```
 
-**Size of the regions**
+
+**Highest averages methods**
+
+Now is when we wonder if the well known D'Hondt method somehow resembles our goal. This method of sharing seems pretty straightforward and natural when is firstly explained to us, but this is why it got a bad reputation:
+
 
 ```{r, echo = F}
 
-#size of the regions # 1 ~= dots/nnodes
-nnodes=(max(seats)+1)*(max(seats)+2)/2;
-RegionSize  = table(df[[1]]$Allocated[1:dots])/(dots/nnodes)
-RegionSize2 = table(df[[2]]$Allocated[1:dots])/(dots/nnodes)
+#D'Hondt Allocation
+a1 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Allocated)))+
+  theme_bw()+
+  geom_point(alpha=1)+
+  geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
+  geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
+  labs(x="X",y="Y",z="Z",title="D'Hondt Allocation")+
+  #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+  scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
 
-par(mfrow=c(2,1))
-plot(RegionSize, main="D'Hondt region sizes")
-plot(RegionSize2,main="Sainte-Laguë region sizes" )
-par(mfrow=c(1,1))
-
-```
-
-**Proportion of results not allocated to the nearest node**
-
-```{r, echo = F}
+ggtern.multi(a1, cols=1)
 
 #malapportionment
 m1 <- ggtern(data=df[[1]],aes(x,y,z,color=Malapportionment)) +
@@ -593,15 +580,6 @@ m1 <- ggtern(data=df[[1]],aes(x,y,z,color=Malapportionment)) +
   #scale_colour_grey(na.value = "black", guide = FALSE)
   scale_colour_brewer(palette = "YlGnBu", na.value = "grey60", guide = FALSE)
 
-m2 <- ggtern(data=df[[2]],aes(x,y,z,color=Malapportionment)) +
-  theme_rgbw() +
-  geom_point(alpha=0.8) +
-  geom_point(data=NodesData,aes(x,y,z),alpha=0.8,color="grey60")+
-  labs(x="X",y="Y",z="Z",title="Sainte-Laguë Malapportionment")+
-  scale_colour_brewer(palette = "YlGnBu", na.value = "grey60", guide = FALSE)
-
-ggtern.multi(m1, m2, cols=2)
-
 #orthodromic malapportionment
 om1 <- ggtern(data=df[[1]],aes(x,y,z,color=Malapportionment2)) +
   theme_rgbw() +
@@ -611,29 +589,19 @@ om1 <- ggtern(data=df[[1]],aes(x,y,z,color=Malapportionment2)) +
   #scale_colour_grey(na.value = "black", guide = FALSE)
   scale_colour_brewer(palette = "YlGnBu", na.value = "grey60", guide = FALSE)
 
-om2 <- ggtern(data=df[[2]],aes(x,y,z,color=Malapportionment2)) +
-  theme_rgbw() +
-  geom_point(alpha=0.8) +
-  geom_point(data=NodesData,aes(x,y,z),alpha=0.8,color="grey60")+
-  labs(x="X",y="Y",z="Z",title="Sainte-Laguë Malapportionment (Orthodromic)")+
-  #scale_colour_grey(na.value = "black", guide = FALSE)
-  scale_colour_brewer(palette = "YlGnBu", na.value = "grey60", guide = FALSE)
-
-ggtern.multi(om1, om2, cols=2)
+ggtern.multi(m1, om1, cols=2)
 
 #points not allocated by D'Hondt in their corresponding Voronoi region
 sum(df[[1]]$Malapportionment[1:dots])/dots
-#points not allocated by Sainte-Laguë in their corresponding Voronoi region
-sum(df[[2]]$Malapportionment[1:dots])/dots
-
 #points not allocated by D'Hondt in their corresponding orthodromic Voronoi region
 sum(df[[1]]$Malapportionment2[1:dots])/dots
-#points not allocated by Sainte-Laguë in their corresponding orthodromic Voronoi region
-sum(df[[2]]$Malapportionment2[1:dots])/dots
 
 ```
 
-**Effect of a threshold on the regions**
+The diagram for malaportionment shows the proportion of results not allocated to the nearest node.
+
+
+Another way of wronging the lesser parties is by setting an artificial entry threshold above the effective threshold of the method:
 
 ```{r, echo = F}
 
@@ -651,44 +619,69 @@ ggtern.multi(a1, t1, cols=2)
 
 ```
 
-**Regions for different orderings in the allocation**
+Clearly, this method shows a bias towards extreme nodes. Again, we shouldn't blame highest averages methods for this. Luckily Sainte-Laguë came to help us:
 
 ```{r, echo = F}
 
-generateOrderColors <- function (colorRGB, seats, validCodes=TRUE) {
-  
-  #generate order color from alloc order codes
-  
-  #extract allocation order from allocation order codes:
-  OrderCode <-as.matrix(0:(3^seats-1))
-  
-  OrderRests <- t(matrix(apply(OrderCode, 1, function(x) x %% (3^(1:seats))),ncol=3^seats, nrow=seats))
-  #(this is vectorial for OrderRests <- OrderCode %% (3^(1:seats))  )
-  
-  Order_from_code <- (cbind(OrderRests,0)-cbind(0,OrderRests))[,1:seats]/t(matrix(rep(3^(0:(seats-1)),3^seats),ncol=3^seats,nrow=seats))+1
-  vectorOrderCode3 <- 2^(0:(seats-1))
-  #decimal codes for colors in nodes
-  Code3 = cbind((Order_from_code == 1)%*%as.matrix(vectorOrderCode3),
-                (Order_from_code == 2)%*%as.matrix(vectorOrderCode3),
-                (Order_from_code == 3)%*%as.matrix(vectorOrderCode3))
-  
-  #linear transformation to fixed extreme colors
-  CodeDecRGB = floor(Code3%*%matrix(colorRGB,3,3, byrow=T)/2^seats)
-  
-  #hex codes for colors in nodes
-  CodeRGB = cbind(matrix("#",3^seats),format(as.hexmode(CodeDecRGB[,1]),width=2),format(as.hexmode(CodeDecRGB[,2]),width=2),format(as.hexmode(CodeDecRGB[,3]),width=2))
-  CodeRGB = do.call("paste0",as.data.frame(CodeRGB))
-  
-  #values = CodeRGB[validCodes]
-  values = CodeRGB[c(validCodes, 3^seats)] #added one more color bc scale_color_manual() demanded one more color
-  #values = CodeRGB[c(1, validCodes)] #added one more color bc scale_color_manual() demanded one more color
-  
-  
-  return(values);
-  
-}
+#Sainte-Laguë allocation
+a2 <- ggtern(data=df[[2]],aes(x,y,z,color=as.factor(Allocated)))+
+  theme_bw()+
+  geom_point(alpha=1)+
+  geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
+  geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
+  labs(x="X",y="Y",z="Z",title="Sainte-Laguë Allocation")+
+  #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+  scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
+
+ggtern.multi(a2, cols=1)
+
+#orthodromic 
+m2 <- ggtern(data=df[[2]],aes(x,y,z,color=Malapportionment)) +
+  theme_rgbw() +
+  geom_point(alpha=0.8) +
+  geom_point(data=NodesData,aes(x,y,z),alpha=0.8,color="grey60")+
+  labs(x="X",y="Y",z="Z",title="Sainte-Laguë Malapportionment")+
+  scale_colour_brewer(palette = "YlGnBu", na.value = "grey60", guide = FALSE)
+
+#orthodromic malapportionment
+om2 <- ggtern(data=df[[2]],aes(x,y,z,color=Malapportionment2)) +
+  theme_rgbw() +
+  geom_point(alpha=0.8) +
+  geom_point(data=NodesData,aes(x,y,z),alpha=0.8,color="grey60")+
+  labs(x="X",y="Y",z="Z",title="Sainte-Laguë Malapportionment (Orthodromic)")+
+  #scale_colour_grey(na.value = "black", guide = FALSE)
+  scale_colour_brewer(palette = "YlGnBu", na.value = "grey60", guide = FALSE)
+
+ggtern.multi(m2, om2, cols=2)
+
+#points not allocated by Sainte-Laguë in their corresponding Voronoi region
+sum(df[[2]]$Malapportionment[1:dots])/dots
+#points not allocated by Sainte-Laguë in their corresponding orthodromic Voronoi region
+sum(df[[2]]$Malapportionment2[1:dots])/dots
 
 ```
+
+```{r, echo = F}
+
+#size of the regions # 1 ~= dots/nnodes
+nnodes=(max(seats)+1)*(max(seats)+2)/2;
+RegionSize  = table(df[[1]]$Allocated[1:dots])/(dots/nnodes)
+RegionSize2 = table(df[[2]]$Allocated[1:dots])/(dots/nnodes)
+
+par(mfrow=c(2,1))
+plot(RegionSize, main="D'Hondt region sizes")
+plot(RegionSize2,main="Sainte-Laguë region sizes" )
+par(mfrow=c(1,1))
+
+```
+
+This is getting close. Still those shapes...
+
+The regions created by D'Hondt method aren't the same as the Voronoi regions created by the lattice of nodes. This method allocates more than 60% of the points correctly whereas Sainte-Laguë method is, in more than 90% of the points, similar to Voronoi. In D'Hondt the sizes of the regions are similar, but Sainte-Laguë produces regions centered on the nodes.
+
+Highest averages methods produce regions with borders in angular sections. Voronoi borders are given by segment sections.
+
+We study here not only the result of allocation, but also the ordering in the allocation of seats, and so we plot a diagram for the regions of different allocation orderings in the Electoral Space as subregions of the allocation ones. This diagram visualizes in a remarkable way the geometry of the Electoral Space:
 
 ```{r, echo = F}
 
@@ -713,7 +706,7 @@ ggtern.multi(o1, o2, cols=2)
 
 ```
 
-**Partial sums in the allocation**
+Let's see some diagrams for different number of seats:
 
 ```{r, echo = F}
 
@@ -760,9 +753,7 @@ ggtern.multi(plotlist=plist, cols=3)
 
 ```
 
-**History of elections**
-
-We can also draw historic data from past elections on the diagrams.
+We can plot the history of elections in one diagram:
 
 ```{r, echo = F}
 
@@ -803,7 +794,7 @@ VotesData <- function (votes=matrix(0,1), election=matrix(0,1)) {
 
 ```
 
-```{r, echo = T}
+```{r, echo = F}
 
 generateSpline <- function (dfvotes, method = "natural") {
   
@@ -853,7 +844,7 @@ dfSpline <- generateSpline(dfvotes)
 
 ```
 
-```{r, echo = T}
+```{r, echo = F}
 
 ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Allocated)))+
   #theme_rgbw()+
@@ -873,7 +864,7 @@ ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Allocated)))+
 
 **Diversity measures: entropy and effective number of parties**
 
-The diagrams below show vote disperion an camera dispersion measured with different diversity indexes: Shannon entropy and Laakso-Taagepera effective number of parties.
+The diagrams below show vote disperion and camera dispersion measured with different diversity indexes: Shannon entropy and Laakso-Taagepera effective number of parties.
 
 ```{r, echo = F}
 
@@ -949,9 +940,9 @@ ggtern.multi(n1, n2, cols=2)
 
 ```
 
-**Largest remainder method with Hare Quota is similar to Voronoi allocation**
+**Largest remainder methods**
 
-Hare quota gives the nearest allocation to each share of votes. Its allocation regions are the Voronoi regions given by the seat allocation nodes:
+Highest average methods give an answer to those who pursue different levels of proportionality. Bias effects can be corrected or reinforced in any direction. But electors still seem to mistrust the quotients in the Highest averages algorithm. When they say 'one person, one vote', one must struggle to get inside their minds and finally notice that they feel comfortable with the simple division. Then total votes divided somehow by the total seats is the quota. And what's with the rests? This is when the largest remainder methods come:
 
 ```{r, echo = F}
 
@@ -960,7 +951,7 @@ seats=5;
 
 ```
 
-```{r, echo = T}
+```{r, echo = F}
 
 alloc <- function(parties, votes, seats, step=1, threshold=0){
   
@@ -1094,11 +1085,11 @@ sum(dfH[[1]]$Malapportionment2[1:dots])/dots
 
 ```
 
-Differences are only observed in the boundaries because we have not considered the way ties break when using the distance functions.
+So largest remainder method with Hare Quota is similar to Voronoi allocation. Hare quota gives the nearest allocation to each share of votes. Its allocation regions are the Voronoi regions given by the seat allocation nodes. Differences are only observed in the boundaries because we have not considered the way ties break when using the distance functions.
 
+Then there are interests in biasing the results towards the greatest parties, and that's why Droop-Hagenbach–Bischoff method exists.
 
-
-Hare quota is pretty close to Sainte-Laguë and Droop quota is so to D'Hondt, as can be seen in the next diagrams.
+Hare quota is pretty close to Sainte-Laguë and Droop quota is so to D'Hondt, as can be seen in the next diagrams:
 
 ```{r, echo = F}
 
@@ -1129,4 +1120,89 @@ sum(df[[2]]$Allocated==df[[2]]$Hare)/dots
 
 ```
 
+Finally let's take a look at the numbers. Here is an example of allocation:
+
+```{r, echo = F}
+
+alloc <- function(parties, votes, seats, step, threshold=0){
+  
+  #function for the seat allocation and its ordering
+  #computes allocation for several values of seats and divisor step methods
+  #with the same quotiens table
+  votes=votes*(votes>=(threshold*sum(votes)))
+  Mst <- max(step)
+  Mse <- max(seats)
+  nquotients=(1+Mst*(Mse-1))
+  
+  #table with all the quotients needed
+  quotienstable <- data.frame( 
+    parties    = rep(parties, each = nquotients), 
+    quotients  = as.vector(sapply(votes, function(x) 
+      x/seq(from=1, to=nquotients) )),
+    votesrep   = rep(votes, each = nquotients)
+  ) 
+  
+  SeatsList=list()
+  filteredtable =list()
+  
+  
+  for (j in 1:length(step)) {
+    
+    
+    #select from the table of all quotiens the ones whose divisors
+    #belong to the current sequence, given 'seats' and 'step'
+    select <- rep(seq(from=1, to=1+step[j]*(Mse-1), by=step[j]),length(parties))+
+      rep(seq(from=0,to=nquotients*length(parties)-1,by=nquotients),each=Mse)
+    
+    filteredtable [[j]] <- quotienstable$parties[select][order(-quotienstable$quotients[select], -quotienstable$votesrep[select])]
+    
+    SeatsList[[j]]<-list()
+    
+    #a vector of values for seats if you want to compute the partial sums
+    for (i in 1:length(seats)){
+      SeatsList[[j]][[i]]= table(filteredtable[[j]][1:seats[i]])
+    }
+    
+    names(SeatsList[[j]])[1:length(seats)]<-do.call("paste0",as.data.frame(cbind("divisor step ",step[j]," for ", seats," seats")))
+    
+    
+    SeatsList[[j]][[length(seats)+1]] = as.matrix(filteredtable[[j]][1:Mse]) #ordering
+    
+    names(SeatsList[[j]])[length(seats)+1]<-paste0("ordering for divisor step ", step[j]," for ", Mse," seats")
+    
+    
+  }
+  
+  
+  return(SeatsList);
+  
+}
+
+```
+
+```{r, echo = T}
+
+#Allocation example (step=2 Sainte-Laguë; step=1 D'Hondt)
+votes <- sample(1:1000, 3) 
+votes
+#alloc(letters[1:3], votes, seats=5, step=1)
+#alloc(letters[1:3], votes, seats=c(3,5,4), step=2:1, threshold=0.5)
+alloc(letters[1:3], votes, 9, c(1,2), .05) #print seats sum and allocation
+
+```
+
+Sample of the data:
+
+```{r, echo = T}
+
+#dots <- (dotsperside+1)*(dotsperside+2)/2
+
+#df = SpatialData(dotsperside, seats, step)
+#df = SpatialData(dotsperside, 5, 1, threshold)
+#df = SpatialData(dotsperside, c(3,5,4), c(2,1), threshold)
+#dfT = SpatialData(dotsperside, seats=5, threshold=.20)
+
+head(df[[1]][sample(1:dots,10,replace=F),]) #sample data for step=1 and seats=5
+
+```
 

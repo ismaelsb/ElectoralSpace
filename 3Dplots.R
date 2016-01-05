@@ -1,17 +1,11 @@
 #Uncommmet to install ggtern from an online CRAN repository:
 #install.packages("ggtern")
+#install.packages("rgl")
 #Load the ggtern library:
 library(ggtern)
 #library(stats)
-install.packages("Rcmdr")
-library(Rcmdr)
-set.seed(156) #fix random generation
 library("rgl")
-install.packages("installr")
-require(installr)
-install.packages("ImageMagick")
-install.ImageMagick(URL = "http://www.imagemagick.org/script/binary-releases.php")
-
+set.seed(156) #fix random generation
 
 
 #Transform data from 4-simplex to 3D space
@@ -51,8 +45,7 @@ generate4Nodes <- function(seats){
   
 }
 
-
-generateColors <- function (colorRGB, seats) {
+generateColors4 <- function (colorRGB, seats) {
   
   nnodes = (seats+1)*(seats+2)*(seats+3)/6;
   nodes <- as.matrix(generateNodes(seats)[,c("a","b","c","d")])
@@ -68,22 +61,6 @@ generateColors <- function (colorRGB, seats) {
   return(values);
   
 }
-
-
-seats=5
-NodesData <- generate4Nodes(max(seats))
-
-
-#plot nodes for seat allocation
-ggplot(data=NodesData,aes(x,y,z,color=as.factor(index)))+
-  theme_minimal()+
-  geom_point(alpha=1, size=5)+
-  geom_text(aes(label=label,color=as.factor(index)), hjust=0.5, vjust=-0.6, size=4)+ 
-  labs(x="X",y="Y",z="Z",title="Nodes for seat allocation")+
-  #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
-  scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
-
-
 
 generateDots <- function(dotsperside, method="lattice"){
   
@@ -139,11 +116,11 @@ generateDots <- function(dotsperside, method="lattice"){
       for (x in 0:(dotsperside-w)){
         
         for (y in 0:(dotsperside-w-x)){
-        
-        R[i,]<- c(w,x,y,dotsperside-w-x-y)
-        i <- i+1
-        
-        
+          
+          R[i,]<- c(w,x,y,dotsperside-w-x-y)
+          i <- i+1
+          
+          
         }
       }
     }
@@ -155,8 +132,6 @@ generateDots <- function(dotsperside, method="lattice"){
   return(R);
   
 }
-
-
 
 SpatialData4 <- function (dotsperside, seats, step=1, threshold=0, method="tetrahedron") {
   
@@ -256,55 +231,6 @@ SpatialData4 <- function (dotsperside, seats, step=1, threshold=0, method="tetra
   
 }
 
-
-#presets
-seats=2:5;
-step=c(1,2); #(2 Sainte-Laguë 1 D'Hondt)
-dotsperside=64 #dots <- (dotsperside+1)*(dotsperside+2)*(dotsperside+3)/6
-threshold=0
-
-df4 = SpatialData4(dotsperside, seats, step)
-
-
-
-#colors for palettes
-colorRGB3 <- c(242,74,87, 124,218,198, 2,114,195, 130,20,070) #<--
-
-colorRGB0 <- colorRGB3 #choose color palette
-
-
-
-ggplot(data=df4[[1]],aes(x,y,z,color=as.factor(Allocated)))+
-  theme_bw()+
-  geom_point(alpha=.5)+
-  geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
-  geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
-  labs(x="X",y="Y",z="Z",title="D'Hondt Allocation")+
-  #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
-  scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
-
-
-with(df4[[1]], scatter3d(x, y, z, surface = F, point.col = Allocated))
-
-with(NodesData, scatter3d(x, y, z, surface = F))
-
-
-
-#size of the regions # 1 ~= dots/nnodes
-nnodes=(max(seats)+1)*(max(seats)+2)*(max(seats)+2)/6
-dots <- (dotsperside+1)*(dotsperside+2)*(dotsperside+3)/6
-RegionSize  = table(df4[[1]]$Allocated[1:dots])/(dots/nnodes)
-RegionSize2 = table(df4[[2]]$Allocated[1:dots])/(dots/nnodes)
-
-par(mfrow=c(2,1))
-plot(RegionSize, main="D'Hondt region sizes")
-plot(RegionSize2,main="Sainte-Laguë region sizes" )
-par(mfrow=c(1,1))
-
-with(df4[[2]], scatter3d(x, y, z, surface = F, point.col = Allocated))
-
-
-
 generate4Colors <- function (color4RGB, seats, df) {
   
   Seats <- max(seats)
@@ -318,36 +244,8 @@ generate4Colors <- function (color4RGB, seats, df) {
   
 }
 
-
-
-color4RGB <- c(242,74,87, 124,218,198, 2,114,195, 130,20,070) #<--
-
-dColors <- generate4Colors(color4RGB, seats, df4[[1]])
-
-open3d()
-plot3d(df4[[1]]$x, df4[[1]]$y, df4[[1]]$z, 
-       col=rgb(dColors$R,
-               dColors$G,
-               dColors$B),
-       xlab="", ylab="", zlab="",
-       size=3, box=F, axes=F)
-play3d( spin3d(axis=c(2,2,3), rpm=15), duration = 50 )
-
-
-dColors <- generate4Colors(color4RGB, seats, df4[[2]])
-
-plot3d(df4[[2]]$x, df4[[2]]$y, df4[[2]]$z, 
-       col=rgb(dColors$R,
-               dColors$G,
-               dColors$B),
-       xlab="", ylab="", zlab="",
-       size=3, box=F, axes=F)
-play3d( spin3d(axis=c(2,2,3), rpm=15), duration = 50 )
-
-movie3d( spin3d(axis=c(2,2,3), rpm=15), duration = 10 )
-
 #Voronoi
-generate4Colors <- function (color4RGB, seats, df) {
+generate4VColors <- function (color4RGB, seats, df) {
   
   Seats <- max(seats)
   ColorMatrix = matrix(color4RGB, 4,3, byrow=T)
@@ -361,4 +259,78 @@ generate4Colors <- function (color4RGB, seats, df) {
 }
 
 
+
+seats=5
+NodesData <- generate4Nodes(max(seats))
+
+#colors for palettes
+color4RGB <- c(242,74,87, 122,55,139,  2,114,195, 255,127,0) #<--RPBO
+color4RGB <- c(242,74,87, 124,218,198, 2,114,195, 130,20,070) #<--RGBP
+color4RGB <- c(242,74,87, 124,218,198, 2,114,195, 210,230,10) #<--RGBY
+
+#plot nodes for seat allocation
+ggplot(data=NodesData,aes(x,y,z,color=as.factor(index)))+
+  theme_minimal()+
+  geom_point(alpha=1, size=5)+
+  geom_text(aes(label=label,color=as.factor(index)), hjust=0.5, vjust=-0.6, size=4)+ 
+  labs(x="X",y="Y",z="Z",title="Nodes for seat allocation")+
+  #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+  scale_colour_manual(values=generateColors4(color4RGB,max(seats)), guide=FALSE, na.value="khaki2")
+
+
+#presets
+seats=2:5;
+step=c(1,2); #(2 Sainte-Laguë 1 D'Hondt)
+dotsperside=64 #dots <- (dotsperside+1)*(dotsperside+2)*(dotsperside+3)/6
+threshold=0
+
+df4 = SpatialData4(dotsperside, seats, step)
+
+
+
+ggplot(data=df4[[1]],aes(x,y,z,color=as.factor(Allocated)))+
+  theme_bw()+
+  geom_point(alpha=.5)+
+  geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
+  geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
+  labs(x="X",y="Y",z="Z",title="D'Hondt Allocation")+
+  #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+  scale_colour_manual(values=generateColors4(color4RGB,max(seats)), guide=FALSE, na.value="khaki2")
+
+
+#size of the regions # 1 ~= dots/nnodes
+nnodes=(max(seats)+1)*(max(seats)+2)*(max(seats)+2)/6
+dots <- (dotsperside+1)*(dotsperside+2)*(dotsperside+3)/6
+RegionSize  = table(df4[[1]]$Allocated[1:dots])/(dots/nnodes)
+RegionSize2 = table(df4[[2]]$Allocated[1:dots])/(dots/nnodes)
+
+par(mfrow=c(2,1))
+plot(RegionSize, main="D'Hondt region sizes")
+plot(RegionSize2,main="Sainte-Laguë region sizes" )
+par(mfrow=c(1,1))
+
+
+
+#Plots for D'Hondt, Sainte-Laguë and Voronoi regions
+open3d()
+
+plot3d(df4[[1]]$x, df4[[1]]$y, df4[[1]]$z, 
+       col=rgb(generate4Colors(color4RGB, seats, df4[[1]])),
+       xlab="", ylab="", zlab="",
+       size=3, box=F, axes=F, top=T)
+play3d( spin3d(axis=c(2,2,3), rpm=15), duration = 5 )
+
+
+plot3d(df4[[1]]$x, df4[[1]]$y, df4[[1]]$z, 
+       col=rgb(generate4Colors(color4RGB, seats, df4[[2]])),
+       xlab="", ylab="", zlab="",
+       size=3, box=F, axes=F, top=T)
+play3d( spin3d(axis=c(2,2,3), rpm=15), duration = 5 )
+
+
+plot3d(df4[[1]]$x, df4[[1]]$y, df4[[1]]$z, 
+       col=rgb(generate4VColors(color4RGB, seats, df4[[1]])),
+       xlab="", ylab="", zlab="",
+       size=3, box=F, axes=F, top=T)
+play3d( spin3d(axis=c(2,2,3), rpm=15), duration = 5 )
 

@@ -258,6 +258,37 @@ generate4VColors <- function (color4RGB, seats, df) {
   
 }
 
+generate4alpha <- function (df) {
+  
+  alpha=0.05+.6*(df$CameraEntropy/max(df$CameraEntropy))^3
+  
+  return(alpha);
+  
+}
+
+generate4Valpha <- function (seats, df) {
+  
+  VCameraEntropy <- rowSums(-NodesData[df$Uniform,5:8]/max(seats)*modifiedlog(NodesData[df$Uniform,5:8]/max(seats)))
+  alpha=0.05+.6*(VCameraEntropy/max(VCameraEntropy))^3
+  
+  return(alpha);
+  
+}
+
+
+modifiedlog <- function(x) {
+  
+  #modified log function for the calculation of entropy
+  #avoids log(0)=NaN
+  
+  x <- as.matrix(x)
+  r<-log(x)
+  r[is.finite(r)==F] <-0
+  return(r)
+  
+}
+
+
 
 
 seats=5
@@ -286,6 +317,29 @@ threshold=0
 
 df4 = SpatialData4(dotsperside, seats, step)
 
+
+#Entropy
+Seats <- length(seats)
+df4[[1]][,18+Seats+1] <- rowSums(-df4[[1]][,4:7]*modifiedlog(df4[[1]][,4:7]))
+df4[[1]][,18+Seats+2] <- rowSums(-df4[[1]][,8:11]/max(seats)*modifiedlog(df4[[1]][,8:11]/max(seats)))
+
+#Effective number of parties
+df4[[1]][,18+Seats+3] <- 1/rowSums((df4[[1]][,4:7])^2)
+df4[[1]][,18+Seats+4] <- 1/rowSums((df4[[1]][,8:11]/max(seats))^2)
+
+names(df4[[1]])[(18+Seats+1):(18+Seats+4)] <- c('Entropy','CameraEntropy','Parties','CameraParties')
+
+
+#Entropy
+Seats <- length(seats)
+df4[[2]][,18+Seats+1] <- rowSums(-df4[[2]][,4:7]*modifiedlog(df4[[2]][,4:7]))
+df4[[2]][,18+Seats+2] <- rowSums(-df4[[2]][,8:11]/max(seats)*modifiedlog(df4[[2]][,8:11]/max(seats)))
+
+#Effective number of parties
+df4[[2]][,18+Seats+3] <- 1/rowSums((df4[[2]][,4:7])^2)
+df4[[2]][,18+Seats+4] <- 1/rowSums((df4[[2]][,8:11]/max(seats))^2)
+
+names(df4[[2]])[(18+Seats+1):(18+Seats+4)] <- c('Entropy','CameraEntropy','Parties','CameraParties')
 
 
 ggplot(data=df4[[1]],aes(x,y,z,color=as.factor(Allocated)))+
@@ -316,21 +370,26 @@ open3d()
 
 plot3d(df4[[1]]$x, df4[[1]]$y, df4[[1]]$z, 
        col=rgb(generate4Colors(color4RGB, seats, df4[[1]])),
+       alpha=generate4alpha(df4[[1]]),
        xlab="", ylab="", zlab="",
-       size=3, box=F, axes=F, top=T)
-play3d( spin3d(axis=c(2,2,3), rpm=15), duration = 5 )
+       size=3, box=F, axes=F, top=T, aspect=F)
+play3d( spin3d(axis=c(2,2,3), rpm=12), duration = 5 )
+movie3d( spin3d(axis=c(2,2,3), rpm=12), duration = 5 )
 
-
-plot3d(df4[[1]]$x, df4[[1]]$y, df4[[1]]$z, 
+plot3d(df4[[2]]$x, df4[[2]]$y, df4[[2]]$z, 
        col=rgb(generate4Colors(color4RGB, seats, df4[[2]])),
+       alpha=generate4alpha(df4[[2]]),
        xlab="", ylab="", zlab="",
-       size=3, box=F, axes=F, top=T)
-play3d( spin3d(axis=c(2,2,3), rpm=15), duration = 5 )
-
+       size=3, box=F, axes=F, top=T, aspect=F)
+play3d( spin3d(axis=c(2,2,3), rpm=12), duration = 5 )
+movie3d( spin3d(axis=c(2,2,3), rpm=12), duration = 5 )
 
 plot3d(df4[[1]]$x, df4[[1]]$y, df4[[1]]$z, 
        col=rgb(generate4VColors(color4RGB, seats, df4[[1]])),
+       alpha=generate4Valpha(seats,df4[[1]]),
        xlab="", ylab="", zlab="",
-       size=3, box=F, axes=F, top=T)
-play3d( spin3d(axis=c(2,2,3), rpm=15), duration = 5 )
+       size=3, box=F, axes=F, top=T, aspect=F)
+play3d( spin3d(axis=c(2,2,3), rpm=12), duration = 5 )
+movie3d( spin3d(axis=c(2,2,3), rpm=12), duration = 5 )
+
 

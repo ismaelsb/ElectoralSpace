@@ -370,26 +370,36 @@ open3d()
 
 plot3d(df4[[1]]$x, df4[[1]]$y, df4[[1]]$z, 
        col=rgb(generate4Colors(color4RGB, seats, df4[[1]])),
+       #alpha=generate4alpha(df4[[1]]),
+       xlab="", ylab="", zlab="",
+       size=3, box=F, axes=F, top=T, aspect=F)
+play3d( spin3d(axis=c(2,2,3), rpm=12), duration = 5 )
+#movie3d( spin3d(axis=c(2,2,3), rpm=12), duration = 5 )
+
+plot3d(df4[[2]]$x, df4[[2]]$y, df4[[2]]$z, 
+       col=rgb(generate4Colors(color4RGB, seats, df4[[2]])),
+       #alpha=generate4alpha(df4[[2]]),
+       xlab="", ylab="", zlab="",
+       size=3, box=F, axes=F, top=T, aspect=F)
+play3d( spin3d(axis=c(2,2,3), rpm=12), duration = 5 )
+#movie3d( spin3d(axis=c(2,2,3), rpm=12), duration = 5 )
+
+plot3d(df4[[1]]$x, df4[[1]]$y, df4[[1]]$z, 
+       col=rgb(generate4VColors(color4RGB, seats, df4[[1]])),
+       #alpha=generate4Valpha(seats,df4[[1]]),
+       xlab="", ylab="", zlab="",
+       size=3, box=F, axes=F, top=T, aspect=F)
+play3d( spin3d(axis=c(2,2,3), rpm=12), duration = 5 )
+#movie3d( spin3d(axis=c(2,2,3), rpm=12), duration = 5 )
+
+
+
+plot3d(df4[[1]]$x, df4[[1]]$y, df4[[1]]$z, 
+       col=rgb(1*(df4[[1]]$Allocated==df4[[1]]$Uniform)%*%matrix(1,1,3)),
        alpha=generate4alpha(df4[[1]]),
        xlab="", ylab="", zlab="",
        size=3, box=F, axes=F, top=T, aspect=F)
 play3d( spin3d(axis=c(2,2,3), rpm=12), duration = 5 )
-movie3d( spin3d(axis=c(2,2,3), rpm=12), duration = 5 )
-
-plot3d(df4[[2]]$x, df4[[2]]$y, df4[[2]]$z, 
-       col=rgb(generate4Colors(color4RGB, seats, df4[[2]])),
-       alpha=generate4alpha(df4[[2]]),
-       xlab="", ylab="", zlab="",
-       size=3, box=F, axes=F, top=T, aspect=F)
-play3d( spin3d(axis=c(2,2,3), rpm=12), duration = 5 )
-movie3d( spin3d(axis=c(2,2,3), rpm=12), duration = 5 )
-
-plot3d(df4[[1]]$x, df4[[1]]$y, df4[[1]]$z, 
-       col=rgb(generate4VColors(color4RGB, seats, df4[[1]])),
-       alpha=generate4Valpha(seats,df4[[1]]),
-       xlab="", ylab="", zlab="",
-       size=3, box=F, axes=F, top=T, aspect=F)
-play3d( spin3d(axis=c(2,2,3), rpm=12), duration = 5 )
-movie3d( spin3d(axis=c(2,2,3), rpm=12), duration = 5 )
+#movie3d( spin3d(axis=c(2,2,3), rpm=12), duration = 5 )
 
 

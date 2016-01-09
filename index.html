@@ -71,6 +71,8 @@
 
 <p>The diagram for malaportionment shows the proportion of results not allocated to the nearest node.</p>
 
+<p>The border between two adjacent allocation regions R1 and R2 in the Electoral Space (simplex Σxi=1, 0≤xi≤1) for p parties and s seats, with allocation S1=(s11, ... , s1p) and S2=(s21, ... , s2p), Σs1k=Σs2k=S, dManhattan(S1,S2)=2, s1i≠s2i and s1j≠s2j for i≠j, is given by the hyperplane a•xi-b•xj=0 with a=max(s1j,s2j) and b=max(s1i,s2i).</p>
+
 <p>Another way of wronging the lesser parties is by setting an artificial entry threshold above the effective threshold of the method:</p>
 
 <p><img src="ElectoralSpace_files/figure-html/unnamed-chunk-23-1.png" alt=""> </p>
@@ -228,6 +230,16 @@ head(<span class="pl-smi">df</span>[[<span class="pl-c1">1</span>]][sample(<span
 ## 2176      2
 ## 18466    19
 </code></pre>
+
+<p>Effective threshold for representation:</p>
+
+<p>D'Hondt method, s seats, p parties, σ:Pᵖ(Q)⁺→Nₛᵖ</p>
+
+<p>Minima for representation:</p>
+
+<p>Min sufficient: inf{β|πᵢ(v)&gt;β⇒σᵢ(v)&gt;0}=1/(s+1)</p>
+
+<p>Max necessary:  sup{β|πᵢ(v)&lt;β⇒σᵢ(v)=0}= 1/(s+p-1)</p>
 
       <footer class="site-footer">
         <span class="site-footer-owner"><a href="https://github.com/ismaelsb/ElectoralSpace">Electoral Space</a> is maintained by <a href="https://github.com/ismaelsb">ismaelsb</a>.</span>

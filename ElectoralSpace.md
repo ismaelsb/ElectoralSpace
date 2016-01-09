@@ -8,6 +8,42 @@ Interactive web app: <https://ismaelsb.shinyapps.io/ElectoralSpace>
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 **Drawing the electoral regions**
 
 When talking about the electoral system and electoral reforms there is mainly two kinds of systems: the majoritarian and the proportional systems. In majoritarian electoral systems only a candidate and party is represented in each district. This leaves minority parties, or parties whose voters are not concentrated in a territory, unrepresented. Proportional systems though tend to concede representation to more parties. In any of the cases, electoral methods don't belong to a pure kind, so there is a continuum of shades and people often complain about the porportionality of the systems and demand 'one person, one vote'. They may be wanting equality in the value of their votes and they usually want this to get achieved by allocating seats to territories by their population. There are always problems with the numbers of seats allocated to the less populated territories. But there is an even more important and complex problem: the ability of the system to represent minority parties, primarily when their voters are dispersed. This can be solved if all districts in the elections have a considerable number of seats, for if we have districts with a few seats, there is no way without wasting the votes of lesser parties.
@@ -61,6 +97,7 @@ Now is when we wonder if the well known D'Hondt method somehow resembles our goa
 
 The diagram for malaportionment shows the proportion of results not allocated to the nearest node.
 
+The border between two adjacent allocation regions R1 and R2 in the Electoral Space (simplex Σxi=1, 0≤xi≤1) for p parties and s seats, with allocation S1=(s11, ... , s1p) and S2=(s21, ... , s2p), Σs1k=Σs2k=S, dManhattan(S1,S2)=2, s1i≠s2i and s1j≠s2j for i≠j, is given by the hyperplane a•xi-b•xj=0 with a=max(s1j,s2j) and b=max(s1i,s2i).
 
 Another way of wronging the lesser parties is by setting an artificial entry threshold above the effective threshold of the method:
 
@@ -248,4 +285,14 @@ head(df[[1]][sample(1:dots,10,replace=F),]) #sample data for step=1 and seats=5
 ## 2176      2
 ## 18466    19
 ```
+
+Effective threshold for representation:
+
+D'Hondt method, s seats, p parties, σ:Pᵖ(Q)⁺→Nₛᵖ
+
+Minima for representation:
+
+Min sufficient: inf{β|πᵢ(v)>β⇒σᵢ(v)>0}=1/(s+1)
+
+Max necessary:  sup{β|πᵢ(v)<β⇒σᵢ(v)=0}= 1/(s+p-1)
 

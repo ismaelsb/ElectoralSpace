@@ -1,3 +1,14 @@
+---
+title: "3Dplots"
+output: 
+  html_document: 
+    fig_width: 9
+    keep_md: yes
+    toc: yes
+---
+
+```{r, echo = F, results='hide', message=FALSE, warning=FALSE}
+
 #Uncommmet to install ggtern from an online CRAN repository:
 #install.packages("ggtern")
 #install.packages("rgl")
@@ -7,14 +18,143 @@ library(ggtern)
 library("rgl")
 set.seed(156) #fix random generation
 
+```
 
-#Transform data from 4-simplex to 3D space
-SimplexCoordinates <- c(0, 0, 0,   1, 0, 0,   1/2, sqrt(3)/2, 0,   1/2, sqrt(3)/6, sqrt(2/3))
-#SimplexCoordinates <- c(1, 1, 1,   1, -1, -1,  -1, 1, -1,  -1, -1, 1)
-SimplexToCartesian <- matrix(SimplexCoordinates,nrow=4,ncol=3,byrow=T)
+```{r, echo = F}
 
+alloc <- function(parties, votes, seats, step, threshold=0){
+  
+  #function for the seat allocation and its ordering
+  #computes allocation for several values of seats and divisor step methods
+  #with the same quotiens table
+  votes=votes*(votes>=(threshold*sum(votes)))
+  Mst <- max(step)
+  Mse <- max(seats)
+  nquotients=(1+Mst*(Mse-1))
+  
+  #table with all the quotients needed
+  quotienstable <- data.frame( 
+    parties    = rep(parties, each = nquotients), 
+    quotients  = as.vector(sapply(votes, function(x) 
+      x/seq(from=1, to=nquotients) )),
+    votesrep   = rep(votes, each = nquotients)
+  ) 
+  
+  SeatsList=list()
+  filteredtable =list()
+  
+  
+  for (j in 1:length(step)) {
+    
+    
+    #select from the table of all quotiens the ones whose divisors
+    #belong to the current sequence, given 'seats' and 'step'
+    select <- rep(seq(from=1, to=1+step[j]*(Mse-1), by=step[j]),length(parties))+
+      rep(seq(from=0,to=nquotients*length(parties)-1,by=nquotients),each=Mse)
+    
+    filteredtable [[j]] <- quotienstable$parties[select][order(-quotienstable$quotients[select], -quotienstable$votesrep[select])]
+    
+    SeatsList[[j]]<-list()
+    
+    #a vector of values for seats if you want to compute the partial sums
+    for (i in 1:length(seats)){
+      SeatsList[[j]][[i]]= table(filteredtable[[j]][1:seats[i]])
+    }
+    
+    names(SeatsList[[j]])[1:length(seats)]<-do.call("paste0",as.data.frame(cbind("divisor step ",step[j]," for ", seats," seats")))
+    
+    
+    SeatsList[[j]][[length(seats)+1]] = as.matrix(filteredtable[[j]][1:Mse]) #ordering
+    
+    names(SeatsList[[j]])[length(seats)+1]<-paste0("ordering for divisor step ", step[j]," for ", Mse," seats")
+    
+    
+  }
+  
+  
+  return(SeatsList);
+  
+}
 
+```
 
+```{r, echo = F}
+
+normalizenodes <- function (nodes) {
+  
+  normnodes <- nodes
+  for (i in 1:dim(nodes)[1]){
+    normnodes[i,] <- nodes[i,]/norm(as.matrix(nodes[i,]),"F")
+  }
+  
+  normnodes <- as.matrix(normnodes)
+  
+}
+
+```
+
+```{r, echo = F}
+
+UniformNearest <- function (x, seats, nodes, nnodes) {
+  
+  Uniform = which.min(apply(abs(nodes/seats - rep(1,nnodes) %*% t(x)),1,max))
+  
+  return(Uniform);
+  
+}
+
+```
+
+```{r, echo = F}
+
+ManhattanNearest <- function (x, seats, nodes, nnodes) {
+  
+  Manhattan = which.min(apply(abs(nodes/seats - rep(1,nnodes) %*% t(x)),1,sum))
+  
+  return(Manhattan);
+  
+}
+
+```
+
+```{r, echo = F}
+
+EuclidNearest <- function (x, seats, nodes, nnodes) {
+  
+  Euclid = which.min(apply((nodes/seats - rep(1,nnodes) %*% t(x))^2,1,sum))
+  
+  return(Euclid);
+  
+}
+
+```
+
+```{r, echo = F}
+
+OrthodromicNearest <- function (x, seats, nodes, nnodes) {
+  
+  normnodes <- normalizenodes(nodes)
+  Orthodromic = which.min(acos((x/norm(t(x),"F")) %*% t(as.matrix(normnodes))))
+  
+  return(Orthodromic);
+  
+}
+
+```
+
+```{r, echo = F}
+
+AllocatedNode <- function (y, nodes, nnodes) {
+  
+  Node = which.min(apply(abs(nodes - rep(1,nnodes) %*% t(y)),1,max))
+  
+  return(Node);
+  
+}
+
+```
+
+```{r, echo = F}
 
 generate4Nodes <- function(seats){ 
   
@@ -50,7 +190,7 @@ generate4Nodes <- function(seats){
 generateColors4 <- function (colorRGB, seats) {
   
   nnodes = (seats+1)*(seats+2)*(seats+3)/6;
-  nodes <- as.matrix(generateNodes(seats)[,c("a","b","c","d")])
+  nodes <- as.matrix(generate4Nodes(seats)[,c("a","b","c","d")])
   #decimal codes for colors in nodes
   Code4 = floor(nodes*255.9/seats) #255.9 avoids seats -> 256 -> HEX #100 case
   #linear transformation to fixed extreme colors
@@ -148,7 +288,7 @@ SpatialData4 <- function (dotsperside, seats, step=1, threshold=0, method="tetra
   Seats=max(seats)
   
   #nodes
-  nodes  <- as.matrix(generateNodes(Seats)[,c("a","b","c","d")])
+  nodes  <- as.matrix(generate4Nodes(Seats)[,c("a","b","c","d")])
   nnodes <- (Seats+1)*(Seats+2)*(Seats+3)/6;
   
   #Indexes for Voronoi regions
@@ -174,7 +314,7 @@ SpatialData4 <- function (dotsperside, seats, step=1, threshold=0, method="tetra
       
       S = t(matrix(sapply(AllocStructure, function(x) x[[j]][[i]]),nrow=4,ncol=dots))
       
-      nodes_sub <- as.matrix(generateNodes(seats[i])[,c("a","b","c","d")])
+      nodes_sub <- as.matrix(generate4Nodes(seats[i])[,c("a","b","c","d")])
       
       AllocPartial[,i] = apply(S, 1, AllocatedNode, nodes=nodes_sub, nnodes=(seats[i]+1)*(seats[i]+2)*(seats[i]+3)/6)
       
@@ -291,6 +431,14 @@ modifiedlog <- function(x) {
 }
 
 
+```
+
+```{r, echo = F}
+
+#Transform data from 4-simplex to 3D space
+SimplexCoordinates <- c(0, 0, 0,   1, 0, 0,   1/2, sqrt(3)/2, 0,   1/2, sqrt(3)/6, sqrt(2/3))
+#SimplexCoordinates <- c(1, 1, 1,   1, -1, -1,  -1, 1, -1,  -1, -1, 1)
+SimplexToCartesian <- matrix(SimplexCoordinates,nrow=4,ncol=3,byrow=T)
 
 
 seats=5
@@ -310,11 +458,14 @@ ggplot(data=NodesData,aes(x,y,z,color=as.factor(index)))+
   #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
   scale_colour_manual(values=generateColors4(color4RGB,max(seats)), guide=FALSE, na.value="khaki2")
 
+```
+
+```{r, echo = F}
 
 #presets
 seats=2:5;
 step=c(1,2); #(2 Sainte-Laguë 1 D'Hondt)
-dotsperside=64 #dots <- (dotsperside+1)*(dotsperside+2)*(dotsperside+3)/6
+dotsperside=39 #dots <- (dotsperside+1)*(dotsperside+2)*(dotsperside+3)/6
 threshold=0
 
 df4 = SpatialData4(dotsperside, seats, step)
@@ -343,6 +494,10 @@ df4[[2]][,18+Seats+4] <- 1/rowSums((df4[[2]][,8:11]/max(seats))^2)
 
 names(df4[[2]])[(18+Seats+1):(18+Seats+4)] <- c('Entropy','CameraEntropy','Parties','CameraParties')
 
+```
+
+
+```{r, echo = F}
 
 ggplot(data=df4[[1]],aes(x,y,z,color=as.factor(Allocated)))+
   theme_bw()+
@@ -365,7 +520,9 @@ plot(RegionSize, main="D'Hondt region sizes")
 plot(RegionSize2,main="Sainte-Laguë region sizes" )
 par(mfrow=c(1,1))
 
+```
 
+```{r, echo = F}
 
 #Plots for D'Hondt, Sainte-Laguë and Voronoi regions
 open3d()
@@ -404,4 +561,4 @@ plot3d(df4[[1]]$x, df4[[1]]$y, df4[[1]]$z,
 play3d( spin3d(axis=c(2,2,3), rpm=12), duration = 5 )
 #movie3d( spin3d(axis=c(2,2,3), rpm=12), duration = 5 )
 
-
+```

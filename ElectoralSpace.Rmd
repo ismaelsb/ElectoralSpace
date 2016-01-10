@@ -1209,7 +1209,7 @@ head(df[[1]][sample(1:dots,10,replace=F),]) #sample data for step=1 and seats=5
 
 Effective threshold for representation:
 
-D'Hondt method, s seats, p parties, σ:Pᵖ(Q)⁺→Nₛᵖ
+D'Hondt method, s seats, p parties, σ:Pᵖ(Q)⁺→Δₛᵖ
 
 Minima for representation:
 

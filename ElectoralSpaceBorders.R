@@ -28,7 +28,7 @@ generateNodes <- function(seats){
   
 }
 
-generateBorderLattice <- function ( seats, step ) {
+generateBorderLattice <- function ( seats, step=1 ) {
   
   divisor <- seq(from=1, to=1+step*(seats+2-1), by=step)
   divisor <- c(0,divisor)
@@ -81,7 +81,7 @@ generateBorderLattice <- function ( seats, step ) {
   
 }
 
-generateBorderLines <- function ( seats, step ) {
+generateBorderLines <- function ( seats, step=1 ) {
   
   dB <- generateBorderLattice(seats,step)
   Bl <- matrix(0,nrow=3*(seats+1)*(seats+2)/2+3*(seats+1)+3,ncol=6)
@@ -143,14 +143,14 @@ dfBl <- generateBorderLines(seats, step)
 ggtern( data=dfB, aes(x,y,z))+ 
   geom_point()
 
-ggtern( data=dfBl, aes(x,y,z,xend=xend,yend=yend,zend=zend))+ 
+bl1 <- ggtern( data=dfBl, aes(x,y,z,xend=xend,yend=yend,zend=zend))+ 
   geom_segment()
 
 ggtern(data=dfB, aes(x,y,z))+
   geom_point()+
   geom_segment(data=dfBl,aes(x,y,z,xend=xend,yend=yend,zend=zend))
 
-ggtern(data=dfB,aes(x,y,z))+
+bpl1 <- ggtern(data=dfB,aes(x,y,z))+
   #theme_bw()+
   geom_point(alpha=1, color=dfB$surplus)+
   geom_segment(data=dfBl,aes(x,y,z,xend=xend,yend=yend,zend=zend))+
@@ -160,5 +160,129 @@ ggtern(data=dfB,aes(x,y,z))+
   #geom_polygon(aes(fill=, group=))+
   #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
   #scale_colour_manual(values=generateColors(colorRGB0,seats), guide=FALSE, na.value="khaki2")
+
+
+step=2
+
+dfB <- generateBorderLattice(seats, step)
+
+#dfB[,1:3]/rowSums(dfB[,1:3]) #integer to racional
+
+dfBl <- generateBorderLines(seats, step)
+
+bl2 <- ggtern( data=dfBl, aes(x,y,z,xend=xend,yend=yend,zend=zend))+ 
+  geom_segment()
+
+
+ggtern.multi(bl1, bl2, cols=2)
+bpl1
+
+
+
+# Effective thresholds
+
+EffThresholdTable <- function (maxseats, step=1){
+  
+  dfBlist <- NULL
+  dfBlistQ <- NULL
+  
+  for (i in 1:maxseats){
+    
+    dfBlist[[i]] <- generateBorderLattice(seats=i, step)            #integers
+    dfBlistQ[[i]] <- dfBlist[[i]][,1:3]/rowSums(dfBlist[[i]][,1:3]) #rationals
+    
+  }
+  
+  EffNecThreshold <- NULL
+  EffSufThreshold <- NULL
+  
+  for (i in 1:maxseats){
+    
+    nonzero1 <- dfBlist[[i]][,1]!=0 & dfBlist[[i]]$surplus==1
+    nonzero2 <- dfBlist[[i]][,1]!=0 & dfBlist[[i]]$surplus==2
+    
+    EffNecThreshold[i] <- min(dfBlistQ[[i]][nonzero1,1])
+    EffSufThreshold[i] <- min(dfBlistQ[[i]][nonzero2,1])
+    
+  }
+  
+  EffThreshold <- as.data.frame(cbind(1:maxseats,EffNecThreshold, EffSufThreshold))
+  names(EffThreshold) <- c('seats','EffNecThreshold','EffSufThreshold')
+  
+  return(EffThreshold)
+  
+}
+
+
+maxseats <- 32
+step=1
+
+EffThreshold <- EffThresholdTable(maxseats, step)
+
+ggplot(EffThreshold, aes(seats, EffNecThreshold))+
+  #geom_point(colour='paleturquoise4')+
+  scale_x_continuous(breaks=seq(1,maxseats,2))+
+  scale_y_continuous(breaks=seq(0,0.5,0.02))+
+  geom_line(aes(y=EffNecThreshold), colour='black', alpha=1/3)+
+  geom_line(aes(y=EffSufThreshold), colour='black', alpha=1/2)+
+  geom_ribbon(aes(ymin=EffNecThreshold,ymax=EffSufThreshold),fill='paleturquoise4', alpha=.85)+
+  labs(title='Necessary votes for representation.\n A lighter shade for a greater number of parties, from two in the upper curve.\n Upper curve also for sufficient votes, for any number of parties',
+       x='Total number of seats', y='Representation thresholds')+
+  #geom_line(aes(y=1/(seats+1)),colour='black', alpha=1/2)+ # suff for 3 parties, already painted
+  #geom_line(aes(y=1/(seats+2)),colour='black', alpha=1/3)+  # nec for 3 parties, already painted
+  geom_line(aes(y=1/(seats+3)),colour='black', alpha=1/4)+ #theoretical nec thresholds from 3 parties
+  geom_line(aes(y=1/(seats+4)),colour='black', alpha=1/5)+
+  geom_line(aes(y=1/(seats+5)),colour='black', alpha=1/6)+
+  geom_line(aes(y=1/(seats+6)),colour='black', alpha=1/7)+
+  geom_line(aes(y=1/(seats+7)),colour='black', alpha=1/8)+
+  geom_line(aes(y=1/(seats+8)),colour='black', alpha=1/9)+
+  geom_line(aes(y=1/(seats+9)),colour='black', alpha=1/10)+
+  geom_line(aes(y=1/(seats+10)),colour='black', alpha=1/11)+
+  geom_line(aes(y=1/(seats+11)),colour='black', alpha=1/12)+
+  geom_line(aes(y=1/(seats+12)),colour='black', alpha=1/13)+
+  geom_line(aes(y=1/(seats+13)),colour='black', alpha=1/14)+
+  geom_line(aes(y=1/(seats+14)),colour='black', alpha=1/15)+
+  #geom_ribbon(aes(ymin=1/(seats+2),ymax=1/(seats+1)),fill='paleturquoise4', alpha=.85)+
+  geom_ribbon(aes(ymin=1/(seats+3),ymax=1/(seats+2)),fill='paleturquoise4', alpha=.85^2)+
+  geom_ribbon(aes(ymin=1/(seats+4),ymax=1/(seats+3)),fill='paleturquoise4', alpha=.85^3)+
+  geom_ribbon(aes(ymin=1/(seats+5),ymax=1/(seats+4)),fill='paleturquoise4', alpha=.85^4)+
+  geom_ribbon(aes(ymin=1/(seats+6),ymax=1/(seats+5)),fill='paleturquoise4', alpha=.85^5)+
+  geom_ribbon(aes(ymin=1/(seats+7),ymax=1/(seats+6)),fill='paleturquoise4', alpha=.85^6)+
+  geom_ribbon(aes(ymin=1/(seats+8),ymax=1/(seats+7)),fill='paleturquoise4', alpha=.85^7)+
+  geom_ribbon(aes(ymin=1/(seats+9),ymax=1/(seats+8)),fill='paleturquoise4', alpha=.85^8)+
+  geom_ribbon(aes(ymin=1/(seats+10),ymax=1/(seats+9)),fill='paleturquoise4', alpha=.85^9)+
+  geom_ribbon(aes(ymin=1/(seats+11),ymax=1/(seats+10)),fill='paleturquoise4', alpha=.85^10)+
+  geom_ribbon(aes(ymin=1/(seats+12),ymax=1/(seats+11)),fill='paleturquoise4', alpha=.85^11)+
+  geom_ribbon(aes(ymin=1/(seats+13),ymax=1/(seats+12)),fill='paleturquoise4', alpha=.85^12)+
+  geom_ribbon(aes(ymin=1/(seats+14),ymax=1/(seats+13)),fill='paleturquoise4', alpha=.85^13)+
+  geom_ribbon(aes(ymin=0,ymax=1/(seats+14)),fill='paleturquoise4', alpha=.85^14)+
+  theme()
+
+
+
+maxseats <- 32
+step=2
+
+EffThreshold <- EffThresholdTable(maxseats, step)
+
+ggplot(EffThreshold, aes(seats, EffNecThreshold))+
+  #geom_point(colour='paleturquoise4')+
+  scale_x_continuous(breaks=seq(1,maxseats,2))+
+  scale_y_continuous(breaks=seq(0,0.5,0.02))+
+  geom_line(aes(y=EffNecThreshold), colour='black', alpha=1/2)+
+  geom_line(aes(y=EffSufThreshold), colour='black', alpha=1/2)+
+  geom_ribbon(aes(ymin=EffNecThreshold,ymax=EffSufThreshold),fill='paleturquoise4', alpha=.85)+
+  labs(title='Sainte-Laguë necessary votes for representation.\n Upper curve for sufficient votes.',
+       x='Total number of seats', y='Representation thresholds')+
+  theme()
+
+
+
+
+#3Dplots
+
+generateBorder4Lattice
+
+generateBorder4Lines
 
 

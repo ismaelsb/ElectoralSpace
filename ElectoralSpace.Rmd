@@ -600,7 +600,6 @@ sum(df[[1]]$Malapportionment2[1:dots])/dots
 
 The diagram for malaportionment shows the proportion of results not allocated to the nearest node.
 
-The border between two adjacent allocation regions R1 and R2 in the Electoral Space (simplex Σxi=1, 0≤xi≤1) for p parties and s seats, with allocation S1=(s11, ... , s1p) and S2=(s21, ... , s2p), Σs1k=Σs2k=S, dManhattan(S1,S2)=2, s1i≠s2i and s1j≠s2j for i≠j, is given by the hyperplane a•xi-b•xj=0 with a=max(s1j,s2j) and b=max(s1i,s2i).
 
 Another way of wronging the lesser parties is by setting an artificial entry threshold above the effective threshold of the method:
 
@@ -1207,13 +1206,274 @@ head(df[[1]][sample(1:dots,10,replace=F),]) #sample data for step=1 and seats=5
 
 ```
 
-Effective threshold for representation:
+**Borders for highest averages methods**
 
-D'Hondt method, s seats, p parties, σ:Pᵖ(Q)⁺→Δₛᵖ
+The border between two adjacent D'Hondt allocation regions R1 and R2 in the Electoral Space (simplex Σxi=1, 0≤xi≤1) for p parties and s seats, with allocation S1=(s11, ... , s1p) and S2=(s21, ... , s2p), Σs1k=Σs2k=S, dManhattan(S1,S2)=2, s1i≠s2i and s1j≠s2j for some i,j, i≠j, is given by the hyperplane b•xi-a•xj=0, Σx=1, with a=max(s1i,s2i) and b=max(s1j,s2j).
+
+The border between three adjacent regions R1, R2 and R3 with allocation S1=(s11, ... , s1p), S2=(s21, ... , s2p) and S3=(s31, ... , s3p), Σs1k=Σs2k=Σs3k=S, dManhattan(Sm,Sn)=2, m,n=1,2,3, m≠n; smi≠sni and smj≠snj for some i,j, i≠j, is given by the hyperplane {b•xi-a•xj=0, c•xi-a•xk=0, c•xj-b•xk=0, Σx=1} with a=max(s1i,s2i,s3i), b=max(s1j,s2j,s3j) and c=max(s1k,s2k,s3k).
+
+In the case of 3 parties, those lasts borders are points with coordinates (a,b,c)/(a+b+c) ~ (a,b,c), for each intersection of regions. Such points can lay either on the discrete lattice with sum s+1 or on the discrete lattice with sum s+2, for in each intersection, either two or three parties could easily grow by 1 their representation staying in the neighborhood, in respect to the granted minima for that neighborhood. The granted minimum shares sum s-1, and then, border points of the form (a,b,c) sum s+1 or s+2.
+
+For Sainte-Laguë or any different than one divisor step, the vectors (a,b,c) are composed by the particular divisors of the method corresponding to the numbers of seats.
+
+Let's represent in the next diagramns the theoretical borders for the regions. the red points are on the discrete lattice s+1 while the black ones are on the discrete lattice s+2. The borders are the result of the superposition of both lattices.
+
+
+```{r, echo = F}
+
+generateBorderLattice <- function ( seats, step ) {
+  
+  divisor <- seq(from=1, to=1+step*(seats+2-1), by=step)
+  divisor <- c(0,divisor)
+  
+  counter <- 1
+  borderpoint <- matrix(0,nrow=(seats+3)^2,ncol=4)
+  # (seats+2)*(seats+3)/2 + (seats+3)*(seats+4)/2 = (seats+3)^2
+  # (corners are counted and registered twice)
+  
+  #every sum seats+1 border points -> (seats+2)*(seats+3)/2
+  #surplus 1 points
+  for (i in 0:(seats+1)){
+    
+    for (j in 0:(seats+1-i)){
+      
+      d1 <- divisor[i+1] # +1 because vector element divisor[1]=0
+      d2 <- divisor[j+1]
+      d3 <- divisor[seats+1-i-j+1]
+      
+      borderpoint[counter,] <- matrix(c(d1,d2,d3,1))
+      counter <- counter+1
+      
+    }
+    
+  }
+  
+  #every sum seats+2 border points -> (seats+3)*(seats+4)/2
+  #surplus 2 points
+  for (i in 0:(seats+2)){
+    
+    for (j in 0:(seats+2-i)){
+      
+      d1 <- divisor[i+1]
+      d2 <- divisor[j+1]
+      d3 <- divisor[seats+2-i-j+1]
+      
+      borderpoint[counter,] <- matrix(c(d1,d2,d3,2))
+      counter <- counter+1
+      
+    }
+    
+  }
+  
+  
+  
+  borderpoint <- as.data.frame(borderpoint)
+  names(borderpoint) <- c('x','y','z','surplus')
+  
+  return(borderpoint)
+  
+}
+
+```
+
+```{r, echo = F}
+
+generateBorderLines <- function ( seats, step ) {
+  
+  dB <- generateBorderLattice(seats,step)
+  Bl <- matrix(0,nrow=3*(seats+1)*(seats+2)/2+3*(seats+1)+3,ncol=6)
+        #number of edges: 6 per hexagon (counted twice);
+        #                 2 per external hexagon (counted once)
+        #                 3 autoedges on the corners (needed)
+  
+  #edges form each surplus 1 point to the 3 adjacent suplus 2 points
+  
+  Bl[,1] <- rep(dB[dB$surplus==1,1],each=3)
+  Bl[,2] <- rep(dB[dB$surplus==1,2],each=3)
+  Bl[,3] <- rep(dB[dB$surplus==1,3],each=3)
+  
+  Id3 <- matrix(rep(c(1,0,0,0,1,0,0,0,1),(seats+2)*(seats+3)/2),ncol=3, byrow=T)
+  
+  # surplus 1 to adjacent surplus 2
+  extToint <- (Bl[,1:3]!=0)*Id3  #remove external points growing to internal points
+  Bl[,4:6] <- Bl[,1:3]+Id3+(step-1)*extToint
+              # external points grow by 1 to inernal points
+              # external points grow by step to external points
+              # internal points always grow by step
+  
+  Bl <- as.data.frame(Bl)
+  names(Bl) <- c('x','y','z', 'xend','yend','zend') #extrem points for an edge
+  
+  return(Bl)
+  
+}
+
+```
+
+```{r, echo = F}
+
+seats=5
+step=1
+
+NodesData <- generateNodes(seats)
+
+dfB <- generateBorderLattice(seats, step)
+
+#dfB[,1:3]/rowSums(dfB[,1:3]) #integer to racional
+
+dfBl <- generateBorderLines(seats, step)
+
+#ggtern( data=dfB, aes(x,y,z))+ 
+#  geom_point()
+
+bl1 <- ggtern( data=dfBl, aes(x,y,z,xend=xend,yend=yend,zend=zend))+ 
+  geom_segment()
+
+#ggtern(data=dfB, aes(x,y,z))+
+#  geom_point()+
+#  geom_segment(data=dfBl,aes(x,y,z,xend=xend,yend=yend,zend=zend))
+
+bpl1 <- ggtern(data=dfB,aes(x,y,z))+
+  #theme_bw()+
+  geom_point(alpha=1, color=dfB$surplus)+
+  geom_segment(data=dfBl,aes(x,y,z,xend=xend,yend=yend,zend=zend))+
+  geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
+  geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
+  labs(x="X",y="Y",z="Z",title="D'Hondt Allocation")#+
+  #geom_polygon(aes(fill=, group=))+
+  #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
+  #scale_colour_manual(values=generateColors(colorRGB0,seats), guide=FALSE, na.value="khaki2")
+
+
+step=2
+
+dfB <- generateBorderLattice(seats, step)
+
+#dfB[,1:3]/rowSums(dfB[,1:3]) #integer to racional
+
+dfBl <- generateBorderLines(seats, step)
+
+bl2 <- ggtern( data=dfBl, aes(x,y,z,xend=xend,yend=yend,zend=zend))+ 
+  geom_segment()
+
+
+ggtern.multi(bl1, bl2, cols=2)
+bpl1
+
+```
+
+**Effective thresholds for representation**
+
+
+For D'Hondt method, s seats and p parties, σ:Pᵖ(Q)⁺→Δₛᵖ
 
 Minima for representation:
 
 Min sufficient: inf{β|πᵢ(v)>β⇒σᵢ(v)>0}=1/(s+1)
 
 Max necessary:  sup{β|πᵢ(v)<β⇒σᵢ(v)=0}= 1/(s+p-1)
+
+
+```{r, echo = F}
+
+# Effective thresholds
+
+EffThresholdTable <- function (maxseats, step=1){
+  
+  dfBlist <- NULL
+  dfBlistQ <- NULL
+  
+  for (i in 1:maxseats){
+    
+    dfBlist[[i]] <- generateBorderLattice(seats=i, step)            #integers
+    dfBlistQ[[i]] <- dfBlist[[i]][,1:3]/rowSums(dfBlist[[i]][,1:3]) #rationals
+    
+  }
+  
+  EffNecThreshold <- NULL
+  EffSufThreshold <- NULL
+  
+  for (i in 1:maxseats){
+    
+    nonzero1 <- dfBlist[[i]][,1]!=0 & dfBlist[[i]]$surplus==1
+    nonzero2 <- dfBlist[[i]][,1]!=0 & dfBlist[[i]]$surplus==2
+    
+    EffNecThreshold[i] <- min(dfBlistQ[[i]][nonzero1,1])
+    EffSufThreshold[i] <- min(dfBlistQ[[i]][nonzero2,1])
+    
+  }
+  
+  EffThreshold <- as.data.frame(cbind(1:maxseats,EffNecThreshold, EffSufThreshold))
+  names(EffThreshold) <- c('seats','EffNecThreshold','EffSufThreshold')
+  
+  return(EffThreshold)
+  
+}
+
+
+maxseats <- 32
+step=1
+
+EffThreshold <- EffThresholdTable(maxseats, step)
+
+ggplot(EffThreshold, aes(seats, EffNecThreshold))+
+  #geom_point(colour='paleturquoise4')+
+  scale_x_continuous(breaks=seq(1,maxseats,2))+
+  scale_y_continuous(breaks=seq(0,0.5,0.02))+
+  geom_line(aes(y=EffNecThreshold), colour='black', alpha=1/3)+
+  geom_line(aes(y=EffSufThreshold), colour='black', alpha=1/2)+
+  geom_ribbon(aes(ymin=EffNecThreshold,ymax=EffSufThreshold),fill='paleturquoise4', alpha=.85)+
+  labs(title='Necessary votes for representation.\n A lighter shade for a greater number of parties, from two in the upper curve.\n Upper curve also for sufficient votes, for any number of parties',
+       x='Total number of seats', y='Representation thresholds')+
+  #geom_line(aes(y=1/(seats+1)),colour='black', alpha=1/2)+ # suff for 3 parties, already painted
+  #geom_line(aes(y=1/(seats+2)),colour='black', alpha=1/3)+  # nec for 3 parties, already painted
+  geom_line(aes(y=1/(seats+3)),colour='black', alpha=1/4)+ #theoretical nec thresholds from 3 parties
+  geom_line(aes(y=1/(seats+4)),colour='black', alpha=1/5)+
+  geom_line(aes(y=1/(seats+5)),colour='black', alpha=1/6)+
+  geom_line(aes(y=1/(seats+6)),colour='black', alpha=1/7)+
+  geom_line(aes(y=1/(seats+7)),colour='black', alpha=1/8)+
+  geom_line(aes(y=1/(seats+8)),colour='black', alpha=1/9)+
+  geom_line(aes(y=1/(seats+9)),colour='black', alpha=1/10)+
+  geom_line(aes(y=1/(seats+10)),colour='black', alpha=1/11)+
+  geom_line(aes(y=1/(seats+11)),colour='black', alpha=1/12)+
+  geom_line(aes(y=1/(seats+12)),colour='black', alpha=1/13)+
+  geom_line(aes(y=1/(seats+13)),colour='black', alpha=1/14)+
+  geom_line(aes(y=1/(seats+14)),colour='black', alpha=1/15)+
+  #geom_ribbon(aes(ymin=1/(seats+2),ymax=1/(seats+1)),fill='paleturquoise4', alpha=.85)+
+  geom_ribbon(aes(ymin=1/(seats+3),ymax=1/(seats+2)),fill='paleturquoise4', alpha=.85^2)+
+  geom_ribbon(aes(ymin=1/(seats+4),ymax=1/(seats+3)),fill='paleturquoise4', alpha=.85^3)+
+  geom_ribbon(aes(ymin=1/(seats+5),ymax=1/(seats+4)),fill='paleturquoise4', alpha=.85^4)+
+  geom_ribbon(aes(ymin=1/(seats+6),ymax=1/(seats+5)),fill='paleturquoise4', alpha=.85^5)+
+  geom_ribbon(aes(ymin=1/(seats+7),ymax=1/(seats+6)),fill='paleturquoise4', alpha=.85^6)+
+  geom_ribbon(aes(ymin=1/(seats+8),ymax=1/(seats+7)),fill='paleturquoise4', alpha=.85^7)+
+  geom_ribbon(aes(ymin=1/(seats+9),ymax=1/(seats+8)),fill='paleturquoise4', alpha=.85^8)+
+  geom_ribbon(aes(ymin=1/(seats+10),ymax=1/(seats+9)),fill='paleturquoise4', alpha=.85^9)+
+  geom_ribbon(aes(ymin=1/(seats+11),ymax=1/(seats+10)),fill='paleturquoise4', alpha=.85^10)+
+  geom_ribbon(aes(ymin=1/(seats+12),ymax=1/(seats+11)),fill='paleturquoise4', alpha=.85^11)+
+  geom_ribbon(aes(ymin=1/(seats+13),ymax=1/(seats+12)),fill='paleturquoise4', alpha=.85^12)+
+  geom_ribbon(aes(ymin=1/(seats+14),ymax=1/(seats+13)),fill='paleturquoise4', alpha=.85^13)+
+  geom_ribbon(aes(ymin=0,ymax=1/(seats+14)),fill='paleturquoise4', alpha=.85^14)+
+  theme()
+
+
+
+maxseats <- 32
+step=2
+
+EffThreshold <- EffThresholdTable(maxseats, step)
+
+ggplot(EffThreshold, aes(seats, EffNecThreshold))+
+  #geom_point(colour='paleturquoise4')+
+  scale_x_continuous(breaks=seq(1,maxseats,2))+
+  scale_y_continuous(breaks=seq(0,0.5,0.02))+
+  geom_line(aes(y=EffNecThreshold), colour='black', alpha=1/2)+
+  geom_line(aes(y=EffSufThreshold), colour='black', alpha=1/2)+
+  geom_ribbon(aes(ymin=EffNecThreshold,ymax=EffSufThreshold),fill='paleturquoise4', alpha=.85)+
+  labs(title='Sainte-Laguë necessary votes for representation.\n Upper curve for sufficient votes.',
+       x='Total number of seats', y='Representation thresholds')+
+  theme()
+
+
+```
+
 

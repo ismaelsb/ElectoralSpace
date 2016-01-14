@@ -177,6 +177,27 @@ bl2 <- ggtern( data=dfBl, aes(x,y,z,xend=xend,yend=yend,zend=zend))+
 ggtern.multi(bl1, bl2, cols=2)
 bpl1
 
+bl <- NULL
+
+for (i in 1:4){
+  
+  dfBl <- generateBorderLines(seats=i, step=1)
+  bl[[i]] <- ggtern( data=dfBl, aes(x,y,z,xend=xend,yend=yend,zend=zend))+ 
+    geom_segment()
+  
+}
+
+for (i in 1:4){
+  
+  dfBl <- generateBorderLines(seats=i, step=2)
+  bl[[i+4]] <- ggtern( data=dfBl, aes(x,y,z,xend=xend,yend=yend,zend=zend))+ 
+    geom_segment()
+  
+}
+
+ggtern.multi(bl[[1]],bl[[5]],bl[[2]],bl[[6]],bl[[3]],bl[[7]],bl[[4]],bl[[8]], cols=4)
+
+
 
 
 # Effective thresholds

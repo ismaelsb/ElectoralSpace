@@ -1212,11 +1212,17 @@ The border between two adjacent D'Hondt allocation regions R1 and R2 in the Elec
 
 The border between three adjacent regions R1, R2 and R3 with allocation S1=(s11, ... , s1p), S2=(s21, ... , s2p) and S3=(s31, ... , s3p), Σs1k=Σs2k=Σs3k=S, dManhattan(Sm,Sn)=2, m,n=1,2,3, m≠n; smi≠sni and smj≠snj for some i,j, i≠j, is given by the hyperplane {b•xi-a•xj=0, c•xi-a•xk=0, c•xj-b•xk=0, Σx=1} with a=max(s1i,s2i,s3i), b=max(s1j,s2j,s3j) and c=max(s1k,s2k,s3k).
 
-In the case of 3 parties, those lasts borders are points with coordinates (a,b,c)/(a+b+c) ~ (a,b,c), for each intersection of regions. Such points can lay either on the discrete lattice with sum s+1 or on the discrete lattice with sum s+2, for in each intersection, either two or three parties could easily grow by 1 their representation staying in the neighborhood, in respect to the granted minima for that neighborhood. The granted minimum shares sum s-1, and then, border points of the form (a,b,c) sum s+1 or s+2.
+In the case of 3 parties, those lasts borders are points with coordinates (a,b,c)/(a+b+c) ~ (a,b,c), for each intersection of regions. Such points can lay either on the discrete lattice with sum s+1 or on the discrete lattice with sum s+2, for in each intersection, either two or three parties could easily grow by 1 their representation staying in the neighborhood, in respect to the granted minima for that neighborhood. The granted minimum shares sum:
+
+* s-1, for lattice s+2 internal points or lattice s+1 external points;
+* s-2, for lattice s+1 internal points;
+* s, for lattice s+2 external points;
+
+Two parties can grow on lattice s+1 external points, three parties can grow on every internal point, and no party can grow con lattice s+2 external point, then those are not border points (see diagram), and then, border points of the form (a,b,c) sum either s+1 or s+2.
 
 For Sainte-Laguë or any different than one divisor step, the vectors (a,b,c) are composed by the particular divisors of the method corresponding to the numbers of seats.
 
-Let's represent in the next diagramns the theoretical borders for the regions. the red points are on the discrete lattice s+1 while the black ones are on the discrete lattice s+2. The borders are the result of the superposition of both lattices.
+Let's represent in the next diagramns the theoretical borders for the regions. the black points are on the discrete lattice s+1 while the red ones are on the discrete lattice s+2. The borders are the result of the superposition of both lattices.
 
 
 ```{r, echo = F}
@@ -1359,6 +1365,27 @@ bl2 <- ggtern( data=dfBl, aes(x,y,z,xend=xend,yend=yend,zend=zend))+
 
 ggtern.multi(bl1, bl2, cols=2)
 bpl1
+
+#Border lines for different number of parties
+bl <- NULL
+
+for (i in 1:4){
+  
+  dfBl <- generateBorderLines(seats=i, step=1)
+  bl[[i]] <- ggtern( data=dfBl, aes(x,y,z,xend=xend,yend=yend,zend=zend))+ 
+    geom_segment()
+  
+}
+
+for (i in 1:4){
+  
+  dfBl <- generateBorderLines(seats=i, step=2)
+  bl[[i+4]] <- ggtern( data=dfBl, aes(x,y,z,xend=xend,yend=yend,zend=zend))+ 
+    geom_segment()
+  
+}
+
+ggtern.multi(bl[[1]],bl[[5]],bl[[2]],bl[[6]],bl[[3]],bl[[7]],bl[[4]],bl[[8]], cols=4)
 
 ```
 

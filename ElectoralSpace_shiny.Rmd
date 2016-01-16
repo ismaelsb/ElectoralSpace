@@ -9,8 +9,8 @@ output:
     toc: yes
 ---
 
-Code available here: <http://rpubs.com/ismaelsb/ElectoralSpace>
- 
+Explanations and code available here: <http://ismaelsb.github.io/ElectoralSpace>
+Theoretical plots are faster. Simulated plots are slow when density is high.
 
 ```{r, echo = F, results='hide', message=FALSE, warning=FALSE}
 #Uncommmet to install ggtern from an online CRAN repository:
@@ -377,38 +377,29 @@ generateOrderColors <- function (colorRGB, seats, validCodes=TRUE) {
 
 ```{r, echo = F}
 
-#history of election results
-
-VotesData <- function (votes=matrix(0,1), election=matrix(0,1)) {
+generateHexagonData <- function(seats, step=1) {
   
-  votes <- prop.table(votes,1)  
+  divisor <- seq(from=1, to=1+step*(seats+2-1), by=step)
+  divisor <- c(0,divisor)
   
-  x <- votes[,1]
-  y <- votes[,2]
-  z <- votes[,3]
+  NodesData <- generateNodes(seats)
   
-  el=dim(votes)[1]
-  label = as.character(election)
+  hexagon <- matrix(0,nrow=(seats+1)*(seats+2)/2, ncol=6*3)
   
+  for (i in 1:((seats+1)*(seats+2)/2)){
+    
+    n <- NodesData[i,2:4] #node
+    hexagon[i,] <- rep(c(n[[1]],n[[2]],n[[3]]),6)+c(1,0,0, 1,0,1, 0,0,1, 0,1,1, 0,1,0, 1,1,0)
+    hexagon[i,] <- divisor[hexagon[i,]+1]
+    
+  }
   
-  #assembling a data frame
-  df = data.frame(
-    
-    type = matrix("vote",el,1),
-    
-    x ,
-    y ,
-    z ,
-    
-    label,
-    
-    election,
-    
-    color = matrix(NA,el,1)
-    
-  )
+  dhex <- as.data.frame(cbind(rep(1:((seats+1)*(seats+2)/2),each=6), matrix(t(hexagon),nrow=6*(seats+1)*(seats+2)/2, ncol=3, byrow=T),
+                              rep(NodesData$x,each=6),rep(NodesData$y,each=6),rep(NodesData$z,each=6)))
   
-  return(df);
+  names(dhex) <- c('hex','x','y','z','nx','ny','nz')
+  
+  return(dhex)
   
 }
 
@@ -416,23 +407,24 @@ VotesData <- function (votes=matrix(0,1), election=matrix(0,1)) {
 
 ```{r, echo = F}
 
-generateSpline <- function (dfvotes, method = "natural") {
+plotallocation <- function (seats, step=1, colorRGB0=c(242,74,87, 124,218,198, 2,114,195), alpha=0.75) {
   
-  #generates a spline curve through elections history
+  NodesData <- generateNodes(seats)
+  dhex <- generateHexagonData(seats, step)
   
-  nelect = dim(dfvotes)[1]
+  polygons <- ggtern(data=dhex, aes(x, y, z))
   
-  splineX <- spline(x=1:nelect,y=dfvotes$x, method=method)
-  splineY <- spline(x=1:nelect,y=dfvotes$y, method=method)
+  for (i in 1:((seats+1)*(seats+2)/2)){
+    
+    polygons <- polygons + geom_polygon(aes(fill=hex, group=hex), data=dhex[dhex==i,] , fill=generateColors(colorRGB0,seats)[i], colour='grey40', size=0, alpha=alpha) #no lines
+    
+  }
   
-  dfSpline = matrix(0, length(splineX[[1]]), 3)
-  dfSpline[,1] <- splineX[[2]]
-  dfSpline[,2] <- splineY[[2]]
-  dfSpline[,3] <- 1-dfSpline[,1]-dfSpline[,2]
-  dfSpline = as.data.frame(dfSpline)
-  names(dfSpline) <- letters[24:26]
+  polygons <- polygons + geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
+    geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
+    labs(x="X",y="Y",z="Z",title="")
   
-  return(dfSpline);
+  return(polygons)
   
 }
 
@@ -448,23 +440,27 @@ inputPanel(
   sliderInput("seats", label = "Number of seats:",
               min = 1, max = 25, value = 5, step = 1),
   
-  sliderInput("threshold", label = "Threshold:",
+  sliderInput("threshold", label = "Threshold (only simulation):",
               min = 0, max = .30, value = 0, step = .01)
 )
 
 inputPanel(
   
   checkboxGroupInput("ChoosePlots", "More plots:",
-                   c("Allocation" = "Qp",
-                     "Malapportionment" = "Mp",
-                     "Voronoi" = "Vp",
-                     "Ordering" = "Op"), selected = "Qp"),
+                   c("Theoretical Allocation" = "TQp",
+                     "Simulated Allocation" = "Qp",
+                     "Malapportionment (sim)" = "Mp",
+                     "Voronoi-Hare (sim)" = "Vp",
+                     "Ordering (sim)" = "Op"), selected = "TQp"),
   
-  selectInput("method", label = "Dot distribution:",
+  selectInput("method", label = "Dot distribution (only sim.):",
               choices = c("lattice","cartesian","ternary"), selected = "lattice"),
   
-  sliderInput("dotsperside", label = "Dot density:",
-              min = 50, max = 300, value = 120, step = 10)
+  sliderInput("dotsperside", label = "Dot density (only sim.):",
+              min = 30, max = 300, value = 30, step = 10),
+  
+  sliderInput("Opacity", label = "Opacity (only theoretical):",
+              min = 0, max = 1, value = 1, step = .1)
 
 )
   
@@ -505,10 +501,16 @@ renderPlot({
     
   }
   
-  NodesData <- generateNodes(input$seats)
   
+  
+  TQp <- plotallocation(input$seats, step=step, colorRGB0=colorRGB0, alpha=input$Opacity)
+  
+  
+   NodesData <- generateNodes(input$seats)
+     
   df = SpatialData(dotsperside=input$dotsperside-1, seats=input$seats, step=step, threshold=input$threshold, method=input$method) 
     
+  
   Qp <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Allocated)))+
   theme_bw()+
   geom_point(alpha=1)+
@@ -544,8 +546,8 @@ renderPlot({
       generateOrderColors(colorRGB0,input$seats,sort(unique(df[[1]]$AllocOrderCode))),guide=FALSE, na.value="khaki2")
   
   
-  plist=list(Qp,Mp,Vp,Op)
-  names(plist) <- c("Qp","Mp","Vp","Op")
+  plist=list(TQp,Qp,Mp,Vp,Op)
+  names(plist) <- c("TQp","Qp","Mp","Vp","Op")
   ggtern.multi(plotlist=plist[input$ChoosePlots], cols=length(input$ChoosePlots))
 
     

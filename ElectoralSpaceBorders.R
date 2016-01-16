@@ -2,6 +2,8 @@
 library(ggtern)
 
 
+#functions for theoretical borders: points, edges and polygons
+
 generateNodes <- function(seats){ 
   
   #define nodes
@@ -111,6 +113,32 @@ generateBorderLines <- function ( seats, step=1 ) {
   
 }
 
+generateHexagonData <- function(seats, step=1) {
+  
+  divisor <- seq(from=1, to=1+step*(seats+2-1), by=step)
+  divisor <- c(0,divisor)
+  
+  NodesData <- generateNodes(seats)
+  
+  hexagon <- matrix(0,nrow=(seats+1)*(seats+2)/2, ncol=6*3)
+  
+  for (i in 1:((seats+1)*(seats+2)/2)){
+    
+    n <- NodesData[i,2:4] #node
+    hexagon[i,] <- rep(c(n[[1]],n[[2]],n[[3]]),6)+c(1,0,0, 1,0,1, 0,0,1, 0,1,1, 0,1,0, 1,1,0)
+    hexagon[i,] <- divisor[hexagon[i,]+1]
+    
+  }
+  
+  dhex <- as.data.frame(cbind(rep(1:((seats+1)*(seats+2)/2),each=6), matrix(t(hexagon),nrow=6*(seats+1)*(seats+2)/2, ncol=3, byrow=T),
+                              rep(NodesData$x,each=6),rep(NodesData$y,each=6),rep(NodesData$z,each=6)))
+  
+  names(dhex) <- c('hex','x','y','z','nx','ny','nz')
+  
+  return(dhex)
+  
+}
+
 generateColors <- function (colorRGB, seats) {
   
   nnodes = (seats+1)*(seats+2)/2;
@@ -127,6 +155,30 @@ generateColors <- function (colorRGB, seats) {
   return(values);
   
 }
+
+plotallocation <- function (seats, step=1, colorRGB0=c(242,74,87, 124,218,198, 2,114,195), alpha=0.75) {
+  
+  NodesData <- generateNodes(seats)
+  dhex <- generateHexagonData(seats, step)
+  
+  polygons <- ggtern(data=dhex, aes(x, y, z))
+  
+  for (i in 1:((seats+1)*(seats+2)/2)){
+    
+    polygons <- polygons + geom_polygon(aes(fill=hex, group=hex), data=dhex[dhex==i,] , fill=generateColors(colorRGB0,seats)[i], colour='grey40', size=.7, alpha=alpha)
+    
+  }
+  
+  polygons <- polygons + geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
+    geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
+    labs(x="X",y="Y",z="Z",title="")
+  
+  return(polygons)
+  
+}
+
+
+
 
 
 seats=5
@@ -177,6 +229,8 @@ bl2 <- ggtern( data=dfBl, aes(x,y,z,xend=xend,yend=yend,zend=zend))+
 ggtern.multi(bl1, bl2, cols=2)
 bpl1
 
+
+#borders for different number of seats
 bl <- NULL
 
 for (i in 1:4){
@@ -196,6 +250,23 @@ for (i in 1:4){
 }
 
 ggtern.multi(bl[[1]],bl[[5]],bl[[2]],bl[[6]],bl[[3]],bl[[7]],bl[[4]],bl[[8]], cols=4)
+
+
+
+#polygons
+
+
+seats <- 5
+step <- 1
+colorRGB0 <- c(242,74,87, 124,218,198, 2,114,195)
+
+dhex <- generateHexagonData(seats, step)
+
+
+plotallocation(seats, step)
+
+
+
 
 
 
@@ -296,6 +367,8 @@ ggplot(EffThreshold, aes(seats, EffNecThreshold))+
   labs(title='Sainte-Laguë necessary votes for representation.\n Upper curve for sufficient votes.',
        x='Total number of seats', y='Representation thresholds')+
   theme()
+
+
 
 
 

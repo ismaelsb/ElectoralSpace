@@ -299,16 +299,19 @@ In the case of 3 parties, those lasts borders are points with coordinates (a,b,c
 
 Two parties can grow on lattice s+1 external points, three parties can grow on every internal point, and no party can grow con lattice s+2 external point, then those are not border points (see diagram), and then, border points of the form (a,b,c) sum either s+1 or s+2.
 
-For Sainte-Laguë or any different than one divisor step, the vectors (a,b,c) are composed by the particular divisors of the method corresponding to the numbers of seats.
+For Sainte-Laguë or any different than one divisor step, the vectors (a,b,c) are composed by the particular divisors of the method corresponding to the numbers of seats. The points on lattices for sum s+1 or sum s+2 are replaced by vectors of divisors whose indexes sum is s+1 or s+2.
 
-Let's represent in the next diagramns the theoretical borders for the regions. the black points are on the discrete lattice s+1 while the red ones are on the discrete lattice s+2. The borders are the result of the superposition of both lattices.
-
-
+Let's represent in the next diagramns the theoretical borders for the regions. the black points are on the discrete lattice s+1 while the red ones are on the discrete lattice s+2. The borders are the result of the superposition of both lattices. It can be seen that the borders obtained by theoretical means are identical to the ones obtained by the previous simulations. Theoretical regions are computed much faster than simulations.
 
 
 
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-42-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-42-2.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-42-3.png) 
+
+
+
+
+
+![](ElectoralSpace_files/figure-html/unnamed-chunk-44-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-44-2.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-44-3.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-44-4.png) 
 
 **Effective thresholds for representation**
 
@@ -322,6 +325,6 @@ Min sufficient: inf{β|πᵢ(v)>β⇒σᵢ(v)>0}=1/(s+1)
 Max necessary:  sup{β|πᵢ(v)<β⇒σᵢ(v)=0}= 1/(s+p-1)
 
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-43-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-43-2.png) 
+![](ElectoralSpace_files/figure-html/unnamed-chunk-45-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-45-2.png) 
 
 

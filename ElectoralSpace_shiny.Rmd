@@ -1,5 +1,5 @@
 ---
-title: "Electoral Space"
+title: "A Tomography of Electoral Methods - Seat Calculator"
 runtime: shiny
 output: 
   html_document: 
@@ -9,8 +9,11 @@ output:
     toc: yes
 ---
 
-Explanations and code available here: <http://ismaelsb.github.io/ElectoralSpace>
-Theoretical plots are faster. Simulated plots are slow when density is high.
+Explanations and code available here: <http://ismaelsb.github.io/ElectoralSpace> 
+
+Theoretical plots are faster. Simulated plots are slow when density is high. 
+
+Fill in the boxes with the number of votes if you want to compute their allocated seats.
 
 ```{r, echo = F, results='hide', message=FALSE, warning=FALSE}
 #Uncommmet to install ggtern from an online CRAN repository:
@@ -438,29 +441,27 @@ inputPanel(
   radioButtons("electmethod", label = "Electoral method:", c("D'Hondt","Sainte-Lague", "Danish"), selected="D'Hondt", inline=F),
   
   sliderInput("seats", label = "Number of seats:",
-              min = 1, max = 25, value = 5, step = 1),
+              min = 1, max = 25, value = 5, step = 1)
   
-  sliderInput("threshold", label = "Threshold (only simulation):",
-              min = 0, max = .30, value = 0, step = .01)
 )
 
 inputPanel(
   
-  checkboxGroupInput("ChoosePlots", "More plots:",
+  checkboxGroupInput("ChoosePlots", "Choose simulations:",
                    c("Theoretical Allocation" = "TQp",
-                     "Simulated Allocation" = "Qp",
-                     "Malapportionment (sim)" = "Mp",
-                     "Voronoi-Hare (sim)" = "Vp",
-                     "Ordering (sim)" = "Op"), selected = "TQp"),
+                     "Allocation (sim.)" = "Qp",
+                     "Malapportionment (sim.)" = "Mp",
+                     "Voronoi-Hare (sim.)" = "Vp",
+                     "Ordering (sim.)" = "Op"), selected = "TQp"),
   
   selectInput("method", label = "Dot distribution (only sim.):",
               choices = c("lattice","cartesian","ternary"), selected = "lattice"),
   
-  sliderInput("dotsperside", label = "Dot density (only sim.):",
-              min = 30, max = 300, value = 30, step = 10),
+  sliderInput("threshold", label = "Threshold (only simulation):",
+              min = 0, max = .30, value = 0, step = .01),
   
-  sliderInput("Opacity", label = "Opacity (only theoretical):",
-              min = 0, max = 1, value = 1, step = .1)
+  sliderInput("dotsperside", label = "Dot density (only sim.):",
+              min = 10, max = 300, value = 10, step = 10)
 
 )
   
@@ -473,9 +474,22 @@ inputPanel(
               choices = c('antiquewhite','aquamarine3','azure1','brown3','brown4','burlywood4','cadetblue','coral3','cornsilk','cornsilk2','cyan3','darkcyan','darkolivegreen4','darkorange2','darkred','darkslategray','darkseagreen','darksalmon','darkslategray3','deeppink4','dodgerblue3','darkorchid2','dodgerblue4','firebrick3','floralwhite','honeydew3','hotpink4','khaki3','khaki4','lavenderblush3','lightblue3','lightcyan2','lightpink2','lightsalmon2','lightsteelblue3','lightyellow1','indianred3','indianred4','ivory','ivory3','midnightblue','mintcream','mistyrose2','navajowhite1','orangered4','paleturquoise2','palegreen3','rosybrown2','royalblue3','salmon','seagreen','seashell1','sienna2','turquoise3','wheat2','black','gray10','gray30','gray50','gray70','gray90','white'), selected = 'aquamarine3'),
   
   selectInput("color3", label = "Color 3:",
-              choices = c('antiquewhite','aquamarine3','azure1','brown3','brown4','burlywood4','cadetblue','coral3','cornsilk','cornsilk2','cyan3','darkcyan','darkolivegreen4','darkorange2','darkred','darkslategray','darkseagreen','darksalmon','darkslategray3','deeppink4','dodgerblue3','darkorchid2','dodgerblue4','firebrick3','floralwhite','honeydew3','hotpink4','khaki3','khaki4','lavenderblush3','lightblue3','lightcyan2','lightpink2','lightsalmon2','lightsteelblue3','lightyellow1','indianred3','indianred4','ivory','ivory3','midnightblue','mintcream','mistyrose2','navajowhite1','orangered4','paleturquoise2','palegreen3','rosybrown2','royalblue3','salmon','seagreen','seashell1','sienna2','turquoise3','wheat2','black','gray10','gray30','gray50','gray70','gray90','white'), selected = 'royalblue3')
+              choices = c('antiquewhite','aquamarine3','azure1','brown3','brown4','burlywood4','cadetblue','coral3','cornsilk','cornsilk2','cyan3','darkcyan','darkolivegreen4','darkorange2','darkred','darkslategray','darkseagreen','darksalmon','darkslategray3','deeppink4','dodgerblue3','darkorchid2','dodgerblue4','firebrick3','floralwhite','honeydew3','hotpink4','khaki3','khaki4','lavenderblush3','lightblue3','lightcyan2','lightpink2','lightsalmon2','lightsteelblue3','lightyellow1','indianred3','indianred4','ivory','ivory3','midnightblue','mintcream','mistyrose2','navajowhite1','orangered4','paleturquoise2','palegreen3','rosybrown2','royalblue3','salmon','seagreen','seashell1','sienna2','turquoise3','wheat2','black','gray10','gray30','gray50','gray70','gray90','white'), selected = 'royalblue3'),
+  
+  sliderInput("Opacity", label = "Opacity:",
+              min = 0, max = 1, value = .8, step = .1)
   
 )
+
+
+inputPanel(
+  
+  numericInput("votes1", label="Votes for Party X", value=0, min = 0),
+  numericInput("votes2", label="Votes for Party Y", value=0, min = 0),
+  numericInput("votes3", label="Votes for Party Z", value=0, min = 0)
+  
+)
+
 
 renderPlot({
 
@@ -508,12 +522,36 @@ renderPlot({
   
    NodesData <- generateNodes(input$seats)
      
-  df = SpatialData(dotsperside=input$dotsperside-1, seats=input$seats, step=step, threshold=input$threshold, method=input$method) 
-    
+  df = SpatialData(dotsperside=input$dotsperside-1, seats=input$seats, step=step, threshold=input$threshold, method=input$method)
+  
+  votes <- as.data.frame(cbind(input$votes1,input$votes2,input$votes3))
+  names(votes) <- c("x","y","z")
+  
+  if (max(votes)>0) {
+  
+  allocated <- alloc(letters[24:26], unlist(votes), input$seats, step, input$threshold)
+  
+  nodes  <- as.matrix(NodesData[,c("x","y","z")])
+  nnodes <- (input$seats+1)*(input$seats+2)/2
+  
+  index <- AllocatedNode(allocated[[1]][[1]], nodes, nnodes)
+  
+  dhex <- generateHexagonData(input$seats, step=step)
+  
+  labelcoords <- as.data.frame(t(colSums(dhex[dhex$hex==index,2:4])))
+  labelcoords <- cbind(labelcoords,NodesData[index,]$label)
+  names(labelcoords)[4] <- "label"
+  
+  
+  TQp <- TQp + geom_polygon(aes(fill=hex, group=hex), data=dhex[dhex==index,] , fill=generateColors(colorRGB0,input$seats)[index], colour='grey20', size=1, alpha=0.85) +
+               geom_point(data=votes ,aes(x,y,z),color="grey20", size=4, alpha=.8)+
+               geom_text(data=labelcoords,aes(label=label), color="grey15", hjust=0.5, vjust=0.5, size=6)
+  
+  }
   
   Qp <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Allocated)))+
   theme_bw()+
-  geom_point(alpha=1)+
+  geom_point(alpha=input$Opacity)+
   geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
   geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
   labs(x="X",y="Y",z="Z",title="Quotients Allocation")+

@@ -1,5 +1,5 @@
 ---
-title: "A Tomography of Electoral Methods - Seat Calculator"
+title: "A Tomography of Electoral Methods - Seat Calculator v2.0"
 runtime: shiny
 output: 
   html_document: 
@@ -460,7 +460,7 @@ inputPanel(
   sliderInput("threshold", label = "Threshold (only simulation):",
               min = 0, max = .30, value = 0, step = .01),
   
-  sliderInput("dotsperside", label = "Dot density (only sim.):",
+  sliderInput("dotsperside", label = "Dot density (only sim; set to min if not used):",
               min = 10, max = 300, value = 10, step = 10)
 
 )
@@ -524,11 +524,15 @@ renderPlot({
      
   df = SpatialData(dotsperside=input$dotsperside-1, seats=input$seats, step=step, threshold=input$threshold, method=input$method)
   
-  votes <- as.data.frame(cbind(input$votes1,input$votes2,input$votes3))
+  votes <- as.data.frame(cbind(0,0,0))
+  votesinput <- as.data.frame(cbind(input$votes1,input$votes2,input$votes3))
   names(votes) <- c("x","y","z")
+  names(votesinput) <- c("x","y","z")
   
-  if (max(votes)>0) {
+  if (max(votesinput)>0 & is.na(min(votesinput))==F) {
   
+  votes <- votesinput
+    
   allocated <- alloc(letters[24:26], unlist(votes), input$seats, step, input$threshold)
   
   nodes  <- as.matrix(NodesData[,c("x","y","z")])
@@ -545,7 +549,8 @@ renderPlot({
   
   TQp <- TQp + geom_polygon(aes(fill=hex, group=hex), data=dhex[dhex==index,] , fill=generateColors(colorRGB0,input$seats)[index], colour='grey20', size=1, alpha=0.85) +
                geom_point(data=votes ,aes(x,y,z),color="grey20", size=4, alpha=.8)+
-               geom_text(data=labelcoords,aes(label=label), color="grey15", hjust=0.5, vjust=0.5, size=6)
+               geom_text(data=labelcoords,aes(label=label), color="grey15", hjust=0.5, vjust=0.5, size=6)+
+               geom_point(data=NodesData[index,],aes(x,y,z),color="khaki2")
   
   }
   
@@ -586,11 +591,11 @@ renderPlot({
   
   plist=list(TQp,Qp,Mp,Vp,Op)
   names(plist) <- c("TQp","Qp","Mp","Vp","Op")
-  ggtern.multi(plotlist=plist[input$ChoosePlots], cols=length(input$ChoosePlots))
-
+  #ggtern.multi(plotlist=plist[input$ChoosePlots], cols=length(input$ChoosePlots))
+  ggtern.multi(plotlist=plist[input$ChoosePlots], cols=2)
     
   
-})
+}, width=900, height=700, res=72)
 
 #renderPlot({
 

@@ -1,8 +1,8 @@
 name: ElectoralSpace
 account: ismaelsb
 server: shinyapps.io
-bundleId: 351246
+bundleId: 351841
 url: https://ismaelsb.shinyapps.io/ElectoralSpace/
-when: 1453053334.62626
+when: 1453133086.39763
 asMultiple: FALSE
 asStatic: FALSE

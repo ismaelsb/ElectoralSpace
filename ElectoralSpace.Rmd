@@ -1283,28 +1283,42 @@ generateBorderLattice <- function ( seats, step ) {
 
 ```{r, echo = F}
 
-generateBorderLines <- function ( seats, step ) {
+generateBorderLines <- function ( seats, step=1 ) {
   
-  dB <- generateBorderLattice(seats,step)
+  divisor <- seq(from=1, to=1+step*(seats+2-1), by=step)
+  divisor <- c(0,divisor)
+  
+  dB0 <- generateBorderLattice(seats,1) #1 instad of step. Will be converted later
+  dB <- generateBorderLattice(seats,step) 
   Bl <- matrix(0,nrow=3*(seats+1)*(seats+2)/2+3*(seats+1)+3,ncol=6)
-        #number of edges: 6 per hexagon (counted twice);
-        #                 2 per external hexagon (counted once)
-        #                 3 autoedges on the corners (needed)
+  #number of edges: 6 per hexagon (counted twice);
+  #                 2 per external hexagon (counted once)
+  #                 3 autoedges on the corners (needed)
   
-  #edges form each surplus 1 point to the 3 adjacent suplus 2 points
-  
-  Bl[,1] <- rep(dB[dB$surplus==1,1],each=3)
-  Bl[,2] <- rep(dB[dB$surplus==1,2],each=3)
-  Bl[,3] <- rep(dB[dB$surplus==1,3],each=3)
+  #edges form each surplus 1 point to the 3 adjacent suplus 2 points:
+
+  #first of all we use the lattice with step 1 in order to get the divisors
+  Bl[,1] <- rep(dB0[dB$surplus==1,1],each=3)
+  Bl[,2] <- rep(dB0[dB$surplus==1,2],each=3)
+  Bl[,3] <- rep(dB0[dB$surplus==1,3],each=3)
   
   Id3 <- matrix(rep(c(1,0,0,0,1,0,0,0,1),(seats+2)*(seats+3)/2),ncol=3, byrow=T)
   
   # surplus 1 to adjacent surplus 2
-  extToint <- (Bl[,1:3]!=0)*Id3  #remove external points growing to internal points
-  Bl[,4:6] <- Bl[,1:3]+Id3+(step-1)*extToint
-              # external points grow by 1 to inernal points
-              # external points grow by step to external points
-              # internal points always grow by step
+  Bl[,4:6] <- divisor[Bl[,1:3]+Id3+1]
+  
+  #alternative method
+  #dBl <- dB0 #(without using dB0)
+  #extToint <- (Bl[,1:3]!=0)*Id3  #remove external points growing to internal points
+  #Bl[,4:6] <- Bl[,1:3]+Id3+(step-1)*extToint
+  # external points grow by 1 to inernal points
+  # external points grow by step to external points
+  # internal points always grow by step
+  
+  #Now we can set the surplus 1 points to the lattice with step
+  Bl[,1] <- rep(dB[dB$surplus==1,1],each=3)
+  Bl[,2] <- rep(dB[dB$surplus==1,2],each=3)
+  Bl[,3] <- rep(dB[dB$surplus==1,3],each=3)
   
   Bl <- as.data.frame(Bl)
   names(Bl) <- c('x','y','z', 'xend','yend','zend') #extrem points for an edge

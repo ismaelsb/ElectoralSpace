@@ -433,7 +433,7 @@ modifiedlog <- function(x) {
 
 ```
 
-```{r, echo = F}
+```{r, echo = F, warning=FALSE}
 
 #Transform data from 4-simplex to 3D space
 SimplexCoordinates <- c(0, 0, 0,   1, 0, 0,   1/2, sqrt(3)/2, 0,   1/2, sqrt(3)/6, sqrt(2/3))
@@ -497,7 +497,7 @@ names(df4[[2]])[(18+Seats+1):(18+Seats+4)] <- c('Entropy','CameraEntropy','Parti
 ```
 
 
-```{r, echo = F}
+```{r, echo = F, warning=FALSE}
 
 ggplot(data=df4[[1]],aes(x,y,z,color=as.factor(Allocated)))+
   theme_bw()+

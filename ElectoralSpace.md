@@ -1,4 +1,13 @@
-# A Tomography of Electoral Methods
+---
+title: "A Tomography of Electoral Methods"
+output:
+  html_document:
+    fig_width: 9
+    keep_md: yes
+    toc: yes
+  pdf_document:
+    toc: yes
+---
 
 ## Geometric visualization for proportional electoral methods.
 
@@ -54,7 +63,7 @@ Let's figure out a 'drawing' technique for electoral methods. We are restricted 
 
 
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-20-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-20-2.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-20-3.png) 
+![](ElectoralSpace_files/figure-html/unnamed-chunk-20-1.png)<!-- -->![](ElectoralSpace_files/figure-html/unnamed-chunk-20-2.png)<!-- -->![](ElectoralSpace_files/figure-html/unnamed-chunk-20-3.png)<!-- -->
 
 For four parties we'd need a tetrahedron. The diagram is usefull for visualizing possible seats at stake when the results are close to the borders between two or more regions.
 
@@ -76,7 +85,7 @@ Voronoi regions would be obtained by a method always allocating the nearest node
 ```
 
 ```
-## [1] 0.9146269
+## [1] 0.9146766
 ```
 
 
@@ -85,14 +94,14 @@ Voronoi regions would be obtained by a method always allocating the nearest node
 Now is when we wonder if the well known D'Hondt method somehow resembles our goal. This method of sharing seems pretty straightforward and natural when is firstly explained to us, but this is why it got a bad reputation:
 
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-22-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-22-2.png) 
+![](ElectoralSpace_files/figure-html/unnamed-chunk-22-1.png)<!-- -->![](ElectoralSpace_files/figure-html/unnamed-chunk-22-2.png)<!-- -->
 
 ```
 ## [1] 0.3691045
 ```
 
 ```
-## [1] 0.2856219
+## [1] 0.2855721
 ```
 
 The diagram for malaportionment shows the proportion of results not allocated to the nearest node.
@@ -100,11 +109,11 @@ The diagram for malaportionment shows the proportion of results not allocated to
 
 Another way of wronging the lesser parties is by setting an artificial entry threshold above the effective threshold of the method:
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-23-1.png) 
+![](ElectoralSpace_files/figure-html/unnamed-chunk-23-1.png)<!-- -->
 
 Clearly, this method shows a bias towards extreme nodes. Again, we shouldn't blame highest averages methods for this. Luckily Sainte-Laguë came to help us:
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-24-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-24-2.png) 
+![](ElectoralSpace_files/figure-html/unnamed-chunk-24-1.png)<!-- -->![](ElectoralSpace_files/figure-html/unnamed-chunk-24-2.png)<!-- -->
 
 ```
 ## [1] 0.08014925
@@ -114,7 +123,7 @@ Clearly, this method shows a bias towards extreme nodes. Again, we shouldn't bla
 ## [1] 0.08333333
 ```
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-25-1.png) 
+![](ElectoralSpace_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
 
 This is getting close. Still those shapes...
 
@@ -124,11 +133,11 @@ Highest averages methods produce regions with borders in angular sections. Voron
 
 We study here not only the result of allocation, but also the ordering in the allocation of seats, and so we plot a diagram for the regions of different allocation orderings in the Electoral Space as subregions of the allocation ones. This diagram visualizes in a remarkable way the geometry of the Electoral Space:
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-26-1.png) 
+![](ElectoralSpace_files/figure-html/unnamed-chunk-26-1.png)<!-- -->
 
 Let's see some diagrams for different number of seats:
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-27-1.png) 
+![](ElectoralSpace_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
 
 We can plot the history of elections in one diagram:
 
@@ -138,13 +147,13 @@ We can plot the history of elections in one diagram:
 
 
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-31-1.png) 
+![](ElectoralSpace_files/figure-html/unnamed-chunk-31-1.png)<!-- -->
 
 **Diversity measures: entropy and effective number of parties**
 
 The diagrams below show vote disperion and camera dispersion measured with different diversity indexes: Shannon entropy and Laakso-Taagepera effective number of parties.
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-32-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-32-2.png) 
+![](ElectoralSpace_files/figure-html/unnamed-chunk-32-1.png)<!-- -->![](ElectoralSpace_files/figure-html/unnamed-chunk-32-2.png)<!-- -->
 
 **Largest remainder methods**
 
@@ -154,14 +163,14 @@ Highest average methods give an answer to those who pursue different levels of p
 
 
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-35-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-35-2.png) 
+![](ElectoralSpace_files/figure-html/unnamed-chunk-35-1.png)<!-- -->![](ElectoralSpace_files/figure-html/unnamed-chunk-35-2.png)<!-- -->
 
 ```
 ## [1] 0.004925373
 ```
 
 ```
-## [1] 0.08835821
+## [1] 0.08840796
 ```
 
 So largest remainder method with Hare Quota is similar to Voronoi allocation. Hare quota gives the nearest allocation to each share of votes. Its allocation regions are the Voronoi regions given by the seat allocation nodes. Differences are only observed in the boundaries because we have not considered the way ties break when using the distance functions.
@@ -170,7 +179,7 @@ Then there are interests in biasing the results towards the greatest parties, an
 
 Hare quota is pretty close to Sainte-Laguë and Droop quota is so to D'Hondt, as can be seen in the next diagrams:
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-36-1.png) 
+![](ElectoralSpace_files/figure-html/unnamed-chunk-36-1.png)<!-- -->
 
 ```
 ## [1] 0.8931343
@@ -311,7 +320,7 @@ Let's represent in the next diagramns the theoretical borders for the regions. t
 
 
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-44-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-44-2.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-44-3.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-44-4.png) 
+![](ElectoralSpace_files/figure-html/unnamed-chunk-44-1.png)<!-- -->![](ElectoralSpace_files/figure-html/unnamed-chunk-44-2.png)<!-- -->![](ElectoralSpace_files/figure-html/unnamed-chunk-44-3.png)<!-- -->![](ElectoralSpace_files/figure-html/unnamed-chunk-44-4.png)<!-- -->
 
 **Effective thresholds for representation**
 
@@ -325,6 +334,7 @@ Min sufficient: inf{β|πᵢ(v)>β⇒σᵢ(v)>0}=1/(s+1)
 Max necessary:  sup{β|πᵢ(v)<β⇒σᵢ(v)=0}= 1/(s+p-1)
 
 
-![](ElectoralSpace_files/figure-html/unnamed-chunk-45-1.png) ![](ElectoralSpace_files/figure-html/unnamed-chunk-45-2.png) 
+![](ElectoralSpace_files/figure-html/unnamed-chunk-45-1.png)<!-- -->
+![](ElectoralSpace_files/figure-html/unnamed-chunk-46-1.png)<!-- -->
 
 

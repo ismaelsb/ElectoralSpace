@@ -426,6 +426,7 @@ NodesData <- generateNodes(max(seats))
 #plot nodes for seat allocation
 ggtern(data=NodesData,aes(x,y,z,color=as.factor(index)))+
   theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=1, size=5)+
   geom_text(aes(label=label,color=as.factor(index)), hjust=0.5, vjust=-0.6, size=4)+ 
   labs(x="X",y="Y",z="Z",title="Nodes for seat allocation")+
@@ -467,7 +468,9 @@ head(df[[1]][sample(1:dots,10,replace=F),]) #sample data for step=1 and seats=5
 #Allocation
 
 a1 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Allocated)))+
-  theme_bw()+
+  #theme_bw()+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=1)+
   geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
   geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
@@ -476,7 +479,9 @@ a1 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Allocated)))+
   scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
 
 a2 <- ggtern(data=df[[2]],aes(x,y,z,color=as.factor(Allocated)))+
-  theme_bw()+
+  #theme_bw()+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=1)+
   geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
   geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
@@ -484,12 +489,15 @@ a2 <- ggtern(data=df[[2]],aes(x,y,z,color=as.factor(Allocated)))+
   #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
   scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
 
-ggtern.multi(a1, a2, cols=2)
+#ggtern.multi(a1, a2, cols=2)
+grid.arrange(grobs = list(a1, a2), ncol=2)
 
 #Voronoi
 
 v1 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Manhattan)))+
-  theme_bw()+
+  #theme_bw()+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=1)+
   geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
   geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
@@ -500,7 +508,9 @@ v1 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Manhattan)))+
 #Orthodromic Voronoi
 
 v2 <- ggtern(data=df[[2]],aes(x,y,z,color=as.factor(Orthodromic)))+
-  theme_bw()+
+  #theme_bw()+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=1)+
   geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
   geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
@@ -508,8 +518,10 @@ v2 <- ggtern(data=df[[2]],aes(x,y,z,color=as.factor(Orthodromic)))+
   #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
   scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
 
-ggtern.multi(a2, v1, cols=2)
-ggtern.multi(a2, v2, cols=2)
+#ggtern.multi(a2, v1, cols=2)
+grid.arrange(grobs = list(a2, v1), ncol=2)
+#ggtern.multi(a2, v2, cols=2)
+grid.arrange(grobs = list(a2, v2), ncol=2)
 
 
 #equivalence between Voronoi regions using different distances and between those and electoral regions
@@ -521,7 +533,9 @@ sum(df[[1]]$Uniform[1:dots]==df[[1]]$Euclid[1:dots])/dots
 sum(df[[1]]$Euclid[1:dots]==df[[1]]$Orthodromic[1:dots])/dots
 
 ggtern(data=df[[1]],aes(x,y,z,color=Malapportionment!=Malapportionment2)) +
-  theme_rgbw() +
+  #theme_rgbw() +
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=0.8) +
   geom_point(data=NodesData,aes(x,y,z),alpha=0.8,color="grey30")+
   labs(x="X",y="Y",z="Z",title="Planar vs Orthodromic regions")+
@@ -542,7 +556,9 @@ par(mfrow=c(1,1))
 
 #malapportionment
 m1 <- ggtern(data=df[[1]],aes(x,y,z,color=Malapportionment)) +
-  theme_rgbw() +
+  #theme_rgbw() +
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=0.8) +
   geom_point(data=NodesData,aes(x,y,z),alpha=0.8,color="grey60")+
   labs(x="X",y="Y",z="Z",title="D'Hondt Malapportionment")+
@@ -550,17 +566,22 @@ m1 <- ggtern(data=df[[1]],aes(x,y,z,color=Malapportionment)) +
   scale_colour_brewer(palette = "YlGnBu", na.value = "grey60", guide = FALSE)
 
 m2 <- ggtern(data=df[[2]],aes(x,y,z,color=Malapportionment)) +
-  theme_rgbw() +
+  #theme_rgbw() +
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=0.8) +
   geom_point(data=NodesData,aes(x,y,z),alpha=0.8,color="grey60")+
   labs(x="X",y="Y",z="Z",title="Sainte-Laguë Malapportionment")+
   scale_colour_brewer(palette = "YlGnBu", na.value = "grey60", guide = FALSE)
 
-ggtern.multi(m1, m2, cols=2)
+#ggtern.multi(m1, m2, cols=2)
+grid.arrange(grobs = list(m1, m2), ncol=2)
 
 #orthodromic malapportionment
 om1 <- ggtern(data=df[[1]],aes(x,y,z,color=Malapportionment2)) +
-  theme_rgbw() +
+  #theme_rgbw() +
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=0.8) +
   geom_point(data=NodesData,aes(x,y,z),alpha=0.8,color="grey60")+
   labs(x="X",y="Y",z="Z",title="D'Hondt Malapportionment")+
@@ -568,14 +589,17 @@ om1 <- ggtern(data=df[[1]],aes(x,y,z,color=Malapportionment2)) +
   scale_colour_brewer(palette = "YlGnBu", na.value = "grey60", guide = FALSE)
 
 om2 <- ggtern(data=df[[2]],aes(x,y,z,color=Malapportionment2)) +
-  theme_rgbw() +
+  #theme_rgbw() +
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=0.8) +
   geom_point(data=NodesData,aes(x,y,z),alpha=0.8,color="grey60")+
   labs(x="X",y="Y",z="Z",title="Sainte-Laguë Malapportionment")+
   #scale_colour_grey(na.value = "black", guide = FALSE)
   scale_colour_brewer(palette = "YlGnBu", na.value = "grey60", guide = FALSE)
 
-ggtern.multi(om1, om2, cols=2)
+#ggtern.multi(om1, om2, cols=2)
+grid.arrange(grobs = list(om1, om2), ncol=2)
 
 #points not allocated by D'Hondt in their corresponding Voronoi region
 sum(df[[1]]$Malapportionment[1:dots])/dots
@@ -590,7 +614,9 @@ sum(df[[2]]$Malapportionment2[1:dots])/dots
 
 #Threshold effect
 t1 <- ggtern(data=dfT[[1]],aes(x,y,z,color=as.factor(Allocated)))+
-  theme_bw()+
+  #theme_bw()+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=1)+
   geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
   geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
@@ -598,69 +624,86 @@ t1 <- ggtern(data=dfT[[1]],aes(x,y,z,color=as.factor(Allocated)))+
   #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
   scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
 
-ggtern.multi(a1, t1, cols=2)
-
+#ggtern.multi(a1, t1, cols=2)
+grid.arrange(grobs = list(a1, t1), ncol=2)
 
 #ordering subregions
 o1 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(AllocOrderCode))) +
-  theme_bw()+
+  #theme_bw()+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=0.8) +
   geom_point(data=NodesData,aes(x,y,z),color="black")+
   labs(x="X",y="Y",z="Z",title="Allocation ordering regions")+
   scale_colour_grey(start = 0.1, end = 1, na.value = "black", guide = FALSE)
 
 o2 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(AllocOrderCode))) +
-  theme_bw()+
-  geom_point(alpha=1) +
+  #theme_bw()+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
+  geom_point(alpha=0.8) +
   geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
   labs(x="X",y="Y",z="Z",title="They come in colors")+
   scale_colour_manual(values=
       generateOrderColors(colorRGB0,max(seats),sort(unique(df[[1]]$AllocOrderCode))),
       guide=FALSE, na.value="khaki2")
 
-ggtern.multi(o1, o2, cols=2)
+#ggtern.multi(o1, o2, cols=2)
+grid.arrange(grobs = list(o1, o2), ncol=2)
 
 #Partial Allocations
 
 p1 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(df[[1]]$All2)))+
-  theme_bw()+
+  #theme_bw()+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=1)+
   labs(x="X",y="Y",z="Z",title="D'Hondt, 2 seats")+
   scale_colour_manual(values=generateColors(colorRGB0,2), guide=FALSE)
 
 p2 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(df[[1]]$All3)))+
-  theme_bw()+
+  #theme_bw()+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=1)+
   labs(x="X",y="Y",z="Z",title="D'Hondt, 3 seats")+
   scale_colour_manual(values=generateColors(colorRGB0,3), guide=FALSE)
 
 p3 <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(df[[1]]$All4)))+
-  theme_bw()+
+  #theme_bw()+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=1)+
   labs(x="X",y="Y",z="Z",title="D'Hondt, 4 seats")+
   scale_colour_manual(values=generateColors(colorRGB0,4), guide=FALSE)
 
 p4 <- ggtern(data=df[[2]],aes(x,y,z,color=as.factor(df[[2]]$All2)))+
-  theme_bw()+
+  #theme_bw()+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=1)+
   labs(x="X",y="Y",z="Z",title="Sainte-Laguë, 2 seats")+
   scale_colour_manual(values=generateColors(colorRGB0,2), guide=FALSE)
 
 p5 <- ggtern(data=df[[2]],aes(x,y,z,color=as.factor(df[[2]]$All3)))+
-  theme_bw()+
+  #theme_bw()+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=1)+
   labs(x="X",y="Y",z="Z",title="Sainte-Laguë, 3 seats")+
   scale_colour_manual(values=generateColors(colorRGB0,3), guide=FALSE)
 
 p6 <- ggtern(data=df[[2]],aes(x,y,z,color=as.factor(df[[2]]$All4)))+
-  theme_bw()+
+  #theme_bw()+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=1)+
   labs(x="X",y="Y",z="Z",title="Sainte-Laguë, 4 seats")+
   scale_colour_manual(values=generateColors(colorRGB0,4), guide=FALSE)
 
-plist=list(p1,p4,p2,p5,p3,p6)
-ggtern.multi(plotlist=plist, cols=3)
-
+plist=list(p1,p2,p3,p4,p5,p6)
+#ggtern.multi(plotlist=plist, cols=3)
+grid.arrange(grobs = plist, ncol=3)
 
 
 #history of election results
@@ -690,7 +733,9 @@ dfSpline <- generateSpline(dfvotes)
 
 ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Allocated)))+
   #theme_rgbw()+
-  theme_bw()+
+  #theme_bw()+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=1)+
   geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
   geom_point(data=dfvotes,aes(x,y,z),color="orange",alpha=1)+
@@ -746,6 +791,7 @@ options(warn=-1)
 
 e1 <- ggtern(data=df[[1]],aes(x,y,z,color=Entropy))+
   theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=1)+
   #geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
   #geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
@@ -756,6 +802,7 @@ e1 <- ggtern(data=df[[1]],aes(x,y,z,color=Entropy))+
 
 e2 <- ggtern(data=df[[1]],aes(x,y,z,color=CameraEntropy))+
   theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=1)+
   #geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
   #geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
@@ -764,11 +811,13 @@ e2 <- ggtern(data=df[[1]],aes(x,y,z,color=CameraEntropy))+
   #scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
   scale_colour_gradient2(low='brown3', mid="aquamarine3", high='black', midpoint=log(2), na.value = "grey50", guide = "colourbar")
 
-ggtern.multi(e1, e2, cols=2)
+#ggtern.multi(e1, e2, cols=2)
+grid.arrange(grobs = list(e1, e2), ncol=2)
 
 
 n1 <- ggtern(data=df[[1]],aes(x,y,z,color=Parties))+
   theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=1)+
   #geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
   #geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
@@ -779,6 +828,7 @@ n1 <- ggtern(data=df[[1]],aes(x,y,z,color=Parties))+
 
 n2 <- ggtern(data=df[[1]],aes(x,y,z,color=CameraParties))+
   theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=1)+
   #geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
   #geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
@@ -787,9 +837,11 @@ n2 <- ggtern(data=df[[1]],aes(x,y,z,color=CameraParties))+
   #scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
   scale_colour_gradient2(low='brown3', mid="aquamarine3", high='black', midpoint=2, na.value = "grey50", guide = "colourbar")
 
-ggtern.multi(n1, n2, cols=2)
+#ggtern.multi(n1, n2, cols=2)
+grid.arrange(grobs = list(n1, n2), ncol=2)
 
-ggtern.multi(e1, e2, n1, n2, cols=2)
+#ggtern.multi(e1, e2, n1, n2, cols=2)
+grid.arrange(grobs = list(e1, e2, n1, n2), ncol=2)
 
 
 
@@ -877,7 +929,9 @@ names(df[[1]])[17+Seats+1] <- "Droop"
 #NodesData <- generateNodes(max(seats))
 
 lr1 <- ggtern(data=dfD[[1]],aes(x,y,z,color=as.factor(Allocated)))+
-  theme_bw()+
+  #theme_bw()+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=1)+
   geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
   geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
@@ -886,7 +940,9 @@ lr1 <- ggtern(data=dfD[[1]],aes(x,y,z,color=as.factor(Allocated)))+
   scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
 
 lr2 <- ggtern(data=dfH[[1]],aes(x,y,z,color=as.factor(Allocated)))+
-  theme_bw()+
+  #theme_bw()+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=1)+
   geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
   geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
@@ -894,11 +950,14 @@ lr2 <- ggtern(data=dfH[[1]],aes(x,y,z,color=as.factor(Allocated)))+
   #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
   scale_colour_manual(values=generateColors(colorRGB0,max(seats)), guide=FALSE, na.value="khaki2")
 
-ggtern.multi(lr1, lr2, cols=2)
+#ggtern.multi(lr1, lr2, cols=2)
+grid.arrange(grobs = list(lr1, lr2), ncol=2)
 
 #malapportionment
 mH1 <- ggtern(data=dfH[[1]],aes(x,y,z,color=Malapportionment)) +
-  theme_rgbw() +
+  #theme_rgbw() +
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=0.8) +
   geom_point(data=NodesData,aes(x,y,z),alpha=0.8,color="grey60")+
   labs(x="X",y="Y",z="Z",title="Hare Malapportionment")+
@@ -907,14 +966,17 @@ mH1 <- ggtern(data=dfH[[1]],aes(x,y,z,color=Malapportionment)) +
 
 #orthodromic malapportionment
 mH2 <- ggtern(data=dfH[[1]],aes(x,y,z,color=Malapportionment2)) +
-  theme_rgbw() +
+  #theme_rgbw() +
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=0.8) +
   geom_point(data=NodesData,aes(x,y,z),alpha=0.8,color="grey60")+
   labs(x="X",y="Y",z="Z",title="Hare Malapportionment (Orthodromic)")+
   #scale_colour_grey(na.value = "black", guide = FALSE)
   scale_colour_brewer(palette = "YlGnBu", na.value = "grey60", guide = FALSE)
 
-ggtern.multi(mH1, mH2, cols=2)
+#ggtern.multi(mH1, mH2, cols=2)
+grid.arrange(grobs = list(mH1, mH2), ncol=2)
 
 #points not allocated by Hare in their corresponding Voronoi region
 sum(dfH[[1]]$Malapportionment[1:dots])/dots
@@ -925,7 +987,9 @@ sum(dfH[[1]]$Malapportionment2[1:dots])/dots
 #Droop vs D'Hondt
 
 diff1 <- ggtern(data=df[[1]],aes(x,y,z,color=Allocated!=Droop)) +
-  theme_rgbw() +
+  #theme_rgbw() +
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=0.8) +
   geom_point(data=NodesData,aes(x,y,z),alpha=0.8,color="grey30")+
   labs(x="X",y="Y",z="Z",title="Droop vs D'Hondt regions")+
@@ -933,14 +997,17 @@ diff1 <- ggtern(data=df[[1]],aes(x,y,z,color=Allocated!=Droop)) +
   scale_colour_brewer(palette = "Greys", na.value = "grey60", guide = FALSE)
 
 diff2 <- ggtern(data=df[[2]],aes(x,y,z,color=Allocated!=Hare)) +
-  theme_rgbw() +
+  #theme_rgbw() +
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=0.8) +
   geom_point(data=NodesData,aes(x,y,z),alpha=0.8,color="grey30")+
   labs(x="X",y="Y",z="Z",title="Hare vs Sainte-Laguë regions")+
   #scale_colour_grey(na.value = "black", guide = FALSE)
   scale_colour_brewer(palette = "Greys", na.value = "grey60", guide = FALSE)
 
-ggtern.multi(diff1, diff2, cols=2)
+#ggtern.multi(diff1, diff2, cols=2)
+grid.arrange(grobs = list(diff1, diff2), ncol=2)
 
 #Droop vs D'Hondt
 sum(df[[1]]$Allocated==df[[1]]$Droop)/dots

@@ -50,7 +50,7 @@ generate4Nodes <- function(seats){
 generateColors4 <- function (colorRGB, seats) {
   
   nnodes = (seats+1)*(seats+2)*(seats+3)/6;
-  nodes <- as.matrix(generateNodes(seats)[,c("a","b","c","d")])
+  nodes <- as.matrix(generate4Nodes(seats)[,c("a","b","c","d")])
   #decimal codes for colors in nodes
   Code4 = floor(nodes*255.9/seats) #255.9 avoids seats -> 256 -> HEX #100 case
   #linear transformation to fixed extreme colors
@@ -148,7 +148,7 @@ SpatialData4 <- function (dotsperside, seats, step=1, threshold=0, method="tetra
   Seats=max(seats)
   
   #nodes
-  nodes  <- as.matrix(generateNodes(Seats)[,c("a","b","c","d")])
+  nodes  <- as.matrix(generate4Nodes(Seats)[,c("a","b","c","d")])
   nnodes <- (Seats+1)*(Seats+2)*(Seats+3)/6;
   
   #Indexes for Voronoi regions
@@ -174,7 +174,7 @@ SpatialData4 <- function (dotsperside, seats, step=1, threshold=0, method="tetra
       
       S = t(matrix(sapply(AllocStructure, function(x) x[[j]][[i]]),nrow=4,ncol=dots))
       
-      nodes_sub <- as.matrix(generateNodes(seats[i])[,c("a","b","c","d")])
+      nodes_sub <- as.matrix(generate4Nodes(seats[i])[,c("a","b","c","d")])
       
       AllocPartial[,i] = apply(S, 1, AllocatedNode, nodes=nodes_sub, nnodes=(seats[i]+1)*(seats[i]+2)*(seats[i]+3)/6)
       

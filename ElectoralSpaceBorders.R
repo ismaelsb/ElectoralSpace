@@ -175,7 +175,7 @@ plotallocation <- function (seats, step=1, colorRGB0=c(242,74,87, 124,218,198, 2
   NodesData <- generateNodes(seats)
   dhex <- generateHexagonData(seats, step)
   
-  polygons <- ggtern(data=dhex, aes(x, y, z))
+  polygons <- ggtern(data=dhex, aes(x, y, z)) + theme_nomask()
   
   for (i in 1:((seats+1)*(seats+2)/2)){
     
@@ -207,17 +207,19 @@ dfB[,1:3]/rowSums(dfB[,1:3]) #integer to racional
 dfBl <- generateBorderLines(seats, step)
 
 ggtern( data=dfB, aes(x,y,z))+ 
-  geom_point()
+  geom_point() + theme_minimal()
 
 bl1 <- ggtern( data=dfBl, aes(x,y,z,xend=xend,yend=yend,zend=zend))+ 
-  geom_segment()
+  geom_segment() + theme_minimal()
 
 ggtern(data=dfB, aes(x,y,z))+
-  geom_point()+
-  geom_segment(data=dfBl,aes(x,y,z,xend=xend,yend=yend,zend=zend))
+  #geom_point()+
+  geom_segment(data=dfBl,aes(x,y,z,xend=xend,yend=yend,zend=zend)) +
+  theme_minimal()
 
 bpl1 <- ggtern(data=dfB,aes(x,y,z))+
   #theme_bw()+
+  theme_minimal() +
   geom_point(alpha=1, color=dfB$surplus)+
   geom_segment(data=dfBl,aes(x,y,z,xend=xend,yend=yend,zend=zend))+
   geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
@@ -237,11 +239,14 @@ dfB <- generateBorderLattice(seats, step)
 dfBl <- generateBorderLines(seats, step)
 
 bl2 <- ggtern( data=dfBl, aes(x,y,z,xend=xend,yend=yend,zend=zend))+ 
-  geom_segment()
+  geom_segment() + theme_minimal()
 
 
-ggtern.multi(bl1, bl2, cols=2)
+#ggtern.multi(bl1, bl2, cols=2)
+grid.arrange(grobs = list(bl1, bl2), ncol=2)
 bpl1
+
+
 
 
 #borders for different number of seats
@@ -251,7 +256,7 @@ for (i in 1:4){
   
   dfBl <- generateBorderLines(seats=i, step=1)
   bl[[i]] <- ggtern( data=dfBl, aes(x,y,z,xend=xend,yend=yend,zend=zend))+ 
-    geom_segment()
+    geom_segment() + theme_minimal()
   
 }
 
@@ -259,12 +264,12 @@ for (i in 1:4){
   
   dfBl <- generateBorderLines(seats=i, step=2)
   bl[[i+4]] <- ggtern( data=dfBl, aes(x,y,z,xend=xend,yend=yend,zend=zend))+ 
-    geom_segment()
+    geom_segment() + theme_minimal()
   
 }
 
-ggtern.multi(bl[[1]],bl[[5]],bl[[2]],bl[[6]],bl[[3]],bl[[7]],bl[[4]],bl[[8]], cols=4)
-
+#ggtern.multi(bl[[1]],bl[[5]],bl[[2]],bl[[6]],bl[[3]],bl[[7]],bl[[4]],bl[[8]], cols=4)
+grid.arrange(grobs = list(bl[[1]],bl[[2]],bl[[3]],bl[[4]],bl[[5]],bl[[6]],bl[[7]],bl[[8]]), ncol=4)
 
 
 #polygons
@@ -326,6 +331,7 @@ step=1
 EffThreshold <- EffThresholdTable(maxseats, step)
 
 ggplot(EffThreshold, aes(seats, EffNecThreshold))+
+  theme(plot.title = element_text(hjust = 0.5)) +
   #geom_point(colour='paleturquoise4')+
   scale_x_continuous(breaks=seq(1,maxseats,2))+
   scale_y_continuous(breaks=seq(0,0.5,0.02))+
@@ -373,6 +379,7 @@ EffThreshold <- EffThresholdTable(maxseats, step)
 
 ggplot(EffThreshold, aes(seats, EffNecThreshold))+
   #geom_point(colour='paleturquoise4')+
+  theme(plot.title = element_text(hjust = 0.5)) +
   scale_x_continuous(breaks=seq(1,maxseats,2))+
   scale_y_continuous(breaks=seq(0,0.5,0.02))+
   geom_line(aes(y=EffNecThreshold), colour='black', alpha=1/2)+

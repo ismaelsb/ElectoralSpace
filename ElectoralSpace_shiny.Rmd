@@ -1,5 +1,5 @@
 ---
-title: "A Tomography of Electoral Methods - Seat Calculator v2.0"
+title: "A Tomography of Electoral Methods - Seat Calculator v2.1"
 runtime: shiny
 output: 
   html_document: 
@@ -415,7 +415,7 @@ plotallocation <- function (seats, step=1, colorRGB0=c(242,74,87, 124,218,198, 2
   NodesData <- generateNodes(seats)
   dhex <- generateHexagonData(seats, step)
   
-  polygons <- ggtern(data=dhex, aes(x, y, z))
+  polygons <- ggtern(data=dhex, aes(x, y, z)) + theme_nomask()
   
   for (i in 1:((seats+1)*(seats+2)/2)){
     
@@ -548,42 +548,50 @@ renderPlot({
   
   
   TQp <- TQp + geom_polygon(aes(fill=hex, group=hex), data=dhex[dhex==index,] , fill=generateColors(colorRGB0,input$seats)[index], colour='grey20', size=1, alpha=0.85) +
-               geom_point(data=votes ,aes(x,y,z),color="grey20", size=4, alpha=.8)+
+               geom_point(data=votes ,aes(x,y),color="grey20", size=4, alpha=.8)+
                geom_text(data=labelcoords,aes(label=label), color="grey15", hjust=0.5, vjust=0.5, size=6)+
                geom_point(data=NodesData[index,],aes(x,y,z),color="khaki2")
   
   }
   
   Qp <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Allocated)))+
-  theme_bw()+
+  #theme_bw()+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=input$Opacity)+
-  geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
+  geom_point(data=NodesData,aes(x,y),color="khaki2")+
   geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
   labs(x="X",y="Y",z="Z",title="Quotients Allocation")+
   #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
   scale_colour_manual(values=generateColors(colorRGB0,input$seats),guide=FALSE,na.value="khaki2")
   
   Mp <- ggtern(data=df[[1]],aes(x,y,z,color=Malapportionment)) +
-  theme_rgbw() +
+  #theme_rgbw() +
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=0.8) +
-  geom_point(data=NodesData,aes(x,y,z),alpha=0.8,color="grey60")+
+  geom_point(data=NodesData,aes(x,y),alpha=0.8,color="grey60")+
   labs(x="X",y="Y",z="Z",title="Malapportionment")+
   #scale_colour_grey(na.value = "black", guide = FALSE)
   scale_colour_brewer(palette = "YlGnBu", na.value = "grey60", guide = FALSE)
   
   Vp <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(Manhattan)))+
-  theme_bw()+
+  #theme_bw()+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=1)+
-  geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
+  geom_point(data=NodesData,aes(x,y),color="khaki2")+
   geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
   labs(x="X",y="Y",z="Z",title="Voronoi Allocation")+
   #scale_colour_grey(start = 0.4, end = 1, na.value = "black", guide = FALSE)
   scale_colour_manual(values=generateColors(colorRGB0,input$seats), guide=FALSE, na.value="khaki2")
   
   Op <- ggtern(data=df[[1]],aes(x,y,z,color=as.factor(AllocOrderCode))) +
-  theme_bw()+
+  #theme_bw()+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
   geom_point(alpha=1) +
-  geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
+  geom_point(data=NodesData,aes(x,y),color="khaki2")+
   labs(x="X",y="Y",z="Z",title="Allocation Ordering")+
   scale_colour_manual(values=
       generateOrderColors(colorRGB0,input$seats,sort(unique(df[[1]]$AllocOrderCode))),guide=FALSE, na.value="khaki2")
@@ -592,7 +600,8 @@ renderPlot({
   plist=list(TQp,Qp,Mp,Vp,Op)
   names(plist) <- c("TQp","Qp","Mp","Vp","Op")
   #ggtern.multi(plotlist=plist[input$ChoosePlots], cols=length(input$ChoosePlots))
-  ggtern.multi(plotlist=plist[input$ChoosePlots], cols=2)
+  #ggtern.multi(plotlist=plist[input$ChoosePlots], cols=2)
+  grid.arrange(grobs = plist[input$ChoosePlots], ncol=2)
     
   
 }, width=900, height=700, res=72)

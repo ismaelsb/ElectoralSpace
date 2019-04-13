@@ -33,6 +33,7 @@ The code used for these computations and representations is available here: http
 The results have been generated in HTML by this R Markdown code: https://github.com/ismaelsb/ElectoralSpace/blob/master/ElectoralSpace.Rmd
 
 An interactive web app is available here: https://ismaelsb.shinyapps.io/ElectoralSpace
+Another interactive calculator for multiple parties is also available here: https://ismaelsb.shinyapps.io/SeatCalculator
 
 
 
@@ -60,7 +61,7 @@ Se puede observar que el método de los restos mayores con el cociente Hare da l
 
 El cociente Hare es bastante parecido a Sainte-Laguë y el cociente Droop lo es a D'Hondt, como puede verse en los siguientes diagramas.
 
-En http://ismaelsb.github.io/ElectoralSpace/ , http://rpubs.com/ismaelsb/ElectoralSpace o en https://github.com/ismaelsb/ElectoralSpace/blob/master/ElectoralSpace.md se presentan los resultados 
+En http://ismaelsb.github.io/ElectoralSpace/ , https://ismaelsb.shinyapps.io/SeatCalculator , http://rpubs.com/ismaelsb/ElectoralSpace o en https://github.com/ismaelsb/ElectoralSpace/blob/master/ElectoralSpace.md se presentan los resultados 
 
 El código utilizado para estos cálculos y representaciones se encuentra en este enlace https://github.com/ismaelsb/ElectoralSpace/blob/master/ElectoralSpace.R
 

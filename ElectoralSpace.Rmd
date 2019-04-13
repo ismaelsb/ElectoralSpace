@@ -108,9 +108,20 @@ alloc <- function(parties, votes, seats, step, threshold=0){
   #function for the seat allocation and its ordering
   #computes allocation for several values of seats and divisor step methods
   #with the same quotiens table
+
+
+  
   votes=votes*(votes>=(threshold*sum(votes)))
+  
+  if (sum(votes>0)==0) {
+    
+       votes <- votes*0+1
+       #to avoid an error in the share of seats
+    
+  }
+  
   Mst <- max(step)
-  Mse <- max(seats)
+  Mse <- max(seats,1) #1 to avoid 0
   nquotients=(1+Mst*(Mse-1))
   
   #table with all the quotients needed
@@ -118,7 +129,10 @@ alloc <- function(parties, votes, seats, step, threshold=0){
     parties    = rep(parties, each = nquotients), 
     quotients  = as.vector(sapply(votes, function(x) 
       x/seq(from=1, to=nquotients) )),
-    votesrep   = rep(votes, each = nquotients)
+    votesrep   = rep(votes, each = nquotients), 
+    #in a tie of quotiens, the party with more votes first
+    tiebreak = rep(runif(length(parties)), each = nquotients) #
+    #in a tie of votes, first seats allocated at random quotientsthen the nexts seats in the same order
   ) 
   
   SeatsList=list()
@@ -133,13 +147,23 @@ alloc <- function(parties, votes, seats, step, threshold=0){
     select <- rep(seq(from=1, to=1+step[j]*(Mse-1), by=step[j]),length(parties))+
       rep(seq(from=0,to=nquotients*length(parties)-1,by=nquotients),each=Mse)
     
-    filteredtable [[j]] <- quotienstable$parties[select][order(-quotienstable$quotients[select], -quotienstable$votesrep[select])]
+    filteredtable [[j]] <- quotienstable$parties[select][order(-quotienstable$quotients[select], -quotienstable$votesrep[select],quotienstable$tiebreak[select])] #,runif(length(parties))
     
     SeatsList[[j]]<-list()
     
     #a vector of values for seats if you want to compute the partial sums
     for (i in 1:length(seats)){
+      
       SeatsList[[j]][[i]]= table(filteredtable[[j]][1:seats[i]])
+      
+      if (seats[i]==0){
+    
+        SeatsList[[j]][[i]]=0*SeatsList[[j]][[i]]
+        
+    
+      }
+
+      
     }
     
     names(SeatsList[[j]])[1:length(seats)]<-do.call("paste0",as.data.frame(cbind("divisor step ",step[j]," for ", seats," seats")))

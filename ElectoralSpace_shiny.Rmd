@@ -83,9 +83,20 @@ alloc <- function(parties, votes, seats, step, threshold=0){
   #function for the seat allocation and its ordering
   #computes allocation for several values of seats and divisor step methods
   #with the same quotiens table
+
+
+  
   votes=votes*(votes>=(threshold*sum(votes)))
+  
+  if (sum(votes>0)==0) {
+    
+       votes <- votes*0+1
+       #to avoid an error in the share of seats
+    
+  }
+  
   Mst <- max(step)
-  Mse <- max(seats)
+  Mse <- max(seats,1) #1 to avoid 0
   nquotients=(1+Mst*(Mse-1))
   
   #table with all the quotients needed
@@ -93,7 +104,10 @@ alloc <- function(parties, votes, seats, step, threshold=0){
     parties    = rep(parties, each = nquotients), 
     quotients  = as.vector(sapply(votes, function(x) 
       x/seq(from=1, to=nquotients) )),
-    votesrep   = rep(votes, each = nquotients)
+    votesrep   = rep(votes, each = nquotients), 
+    #in a tie of quotiens, the party with more votes first
+    tiebreak = rep(runif(length(parties)), each = nquotients) #
+    #in a tie of votes, first seats allocated at random quotientsthen the nexts seats in the same order
   ) 
   
   SeatsList=list()
@@ -108,13 +122,23 @@ alloc <- function(parties, votes, seats, step, threshold=0){
     select <- rep(seq(from=1, to=1+step[j]*(Mse-1), by=step[j]),length(parties))+
       rep(seq(from=0,to=nquotients*length(parties)-1,by=nquotients),each=Mse)
     
-    filteredtable [[j]] <- quotienstable$parties[select][order(-quotienstable$quotients[select], -quotienstable$votesrep[select])]
+    filteredtable [[j]] <- quotienstable$parties[select][order(-quotienstable$quotients[select], -quotienstable$votesrep[select],quotienstable$tiebreak[select])] #,runif(length(parties))
     
     SeatsList[[j]]<-list()
     
     #a vector of values for seats if you want to compute the partial sums
     for (i in 1:length(seats)){
+      
       SeatsList[[j]][[i]]= table(filteredtable[[j]][1:seats[i]])
+      
+      if (seats[i]==0){
+    
+        SeatsList[[j]][[i]]=0*SeatsList[[j]][[i]]
+        
+    
+      }
+
+      
     }
     
     names(SeatsList[[j]])[1:length(seats)]<-do.call("paste0",as.data.frame(cbind("divisor step ",step[j]," for ", seats," seats")))
@@ -410,10 +434,38 @@ generateHexagonData <- function(seats, step=1) {
 
 ```{r, echo = F}
 
-plotallocation <- function (seats, step=1, colorRGB0=c(242,74,87, 124,218,198, 2,114,195), alpha=0.75) {
+generatelabels <- function(seats, step=1){
+  
+  #labels for the center of the regions
+  
+  nnodes     <- (seats+1)*(seats+2)/2
+  nodes      <- generateNodes(seats)
+  dhex       <- generateHexagonData(seats, step=step)
+  labelsData <- as.data.frame(matrix(0,nnodes, 5))
+  
+  for (index in 1:nnodes) {
+    
+    labelsData[index,1]   <- as.integer(index)
+    labelsData[index,2:4] <- as.numeric(t(colSums(dhex[dhex$hex==index,2:4])))
+    labelsData[index,5]   <- toString(nodes[index,5])
+    
+  }
+  
+  names(labelsData) <- c("index","x","y","z","label")
+  
+  return(labelsData)
+  
+}
+
+```
+
+```{r, echo = F}
+
+plotallocation <- function (seats, step=1, colorRGB0=c(242,74,87, 124,218,198, 2,114,195), alpha=0.75, labelsize=4, dotsize=1, dotcolor='khaki2') {
   
   NodesData <- generateNodes(seats)
   dhex <- generateHexagonData(seats, step)
+  labelsData <- generatelabels(seats, step)
   
   polygons <- ggtern(data=dhex, aes(x, y, z)) + theme_nomask()
   
@@ -423,8 +475,12 @@ plotallocation <- function (seats, step=1, colorRGB0=c(242,74,87, 124,218,198, 2
     
   }
   
-  polygons <- polygons + geom_point(data=NodesData,aes(x,y,z),color="khaki2")+
-    geom_text(data=NodesData,aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
+  polygons <- polygons + geom_point(data=NodesData,aes(x,y),color=dotcolor, size=dotsize)+
+    #geom_text(data=NodesData, aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
+    labs(x="X",y="Y",z="Z",title="")
+  
+  polygons <- polygons + #geom_point(data=labelsData,aes(x,y,z),color="khaki2")+
+    geom_text(data=labelsData, aes(label=label), color="grey30", hjust=0.5, vjust=0.5, size=labelsize)+ 
     labs(x="X",y="Y",z="Z",title="")
   
   return(polygons)
@@ -468,13 +524,13 @@ inputPanel(
 inputPanel(
   
   selectInput("color1", label = "Color 1:",
-              choices = c('antiquewhite','aquamarine3','azure1','brown3','brown4','burlywood4','cadetblue','coral3','cornsilk','cornsilk2','cyan3','darkcyan','darkolivegreen4','darkorange2','darkred','darkslategray','darkseagreen','darksalmon','darkslategray3','deeppink4','dodgerblue3','darkorchid2','dodgerblue4','firebrick3','floralwhite','honeydew3','hotpink4','khaki3','khaki4','lavenderblush3','lightblue3','lightcyan2','lightpink2','lightsalmon2','lightsteelblue3','lightyellow1','indianred3','indianred4','ivory','ivory3','midnightblue','mintcream','mistyrose2','navajowhite1','orangered4','paleturquoise2','palegreen3','rosybrown2','royalblue3','salmon','seagreen','seashell1','sienna2','turquoise3','wheat2','black','gray10','gray30','gray50','gray70','gray90','white'), selected = 'indianred3'),
+              choices = c('#FF0000','#00FF00','#0000FF','#FFFF00','#FF00FF','#00FFFF','antiquewhite','aquamarine3','azure1','brown3','brown4','burlywood4','cadetblue','coral3','cornsilk','cornsilk2','cyan3','darkcyan','darkolivegreen4','darkorange2','darkred','darkslategray','darkseagreen','darksalmon','darkslategray3','deeppink4','dodgerblue3','darkorchid2','dodgerblue4','firebrick3','floralwhite','honeydew3','hotpink4','khaki3','khaki4','lavenderblush3','lightblue3','lightcyan2','lightpink2','lightsalmon2','lightsteelblue3','lightyellow1','indianred3','indianred4','ivory','ivory3','midnightblue','mintcream','mistyrose2','navajowhite1','orangered4','paleturquoise2','palegreen3','rosybrown2','royalblue3','salmon','seagreen','seashell1','sienna2','turquoise3','wheat2','black','gray10','gray30','gray50','gray70','gray90','white'), selected = 'indianred3'),
   
   selectInput("color2", label = "Color 2:",
-              choices = c('antiquewhite','aquamarine3','azure1','brown3','brown4','burlywood4','cadetblue','coral3','cornsilk','cornsilk2','cyan3','darkcyan','darkolivegreen4','darkorange2','darkred','darkslategray','darkseagreen','darksalmon','darkslategray3','deeppink4','dodgerblue3','darkorchid2','dodgerblue4','firebrick3','floralwhite','honeydew3','hotpink4','khaki3','khaki4','lavenderblush3','lightblue3','lightcyan2','lightpink2','lightsalmon2','lightsteelblue3','lightyellow1','indianred3','indianred4','ivory','ivory3','midnightblue','mintcream','mistyrose2','navajowhite1','orangered4','paleturquoise2','palegreen3','rosybrown2','royalblue3','salmon','seagreen','seashell1','sienna2','turquoise3','wheat2','black','gray10','gray30','gray50','gray70','gray90','white'), selected = 'aquamarine3'),
+              choices = c('#FF0000','#00FF00','#0000FF','#FFFF00','#FF00FF','#00FFFF','antiquewhite','aquamarine3','azure1','brown3','brown4','burlywood4','cadetblue','coral3','cornsilk','cornsilk2','cyan3','darkcyan','darkolivegreen4','darkorange2','darkred','darkslategray','darkseagreen','darksalmon','darkslategray3','deeppink4','dodgerblue3','darkorchid2','dodgerblue4','firebrick3','floralwhite','honeydew3','hotpink4','khaki3','khaki4','lavenderblush3','lightblue3','lightcyan2','lightpink2','lightsalmon2','lightsteelblue3','lightyellow1','indianred3','indianred4','ivory','ivory3','midnightblue','mintcream','mistyrose2','navajowhite1','orangered4','paleturquoise2','palegreen3','rosybrown2','royalblue3','salmon','seagreen','seashell1','sienna2','turquoise3','wheat2','black','gray10','gray30','gray50','gray70','gray90','white'), selected = 'aquamarine3'),
   
   selectInput("color3", label = "Color 3:",
-              choices = c('antiquewhite','aquamarine3','azure1','brown3','brown4','burlywood4','cadetblue','coral3','cornsilk','cornsilk2','cyan3','darkcyan','darkolivegreen4','darkorange2','darkred','darkslategray','darkseagreen','darksalmon','darkslategray3','deeppink4','dodgerblue3','darkorchid2','dodgerblue4','firebrick3','floralwhite','honeydew3','hotpink4','khaki3','khaki4','lavenderblush3','lightblue3','lightcyan2','lightpink2','lightsalmon2','lightsteelblue3','lightyellow1','indianred3','indianred4','ivory','ivory3','midnightblue','mintcream','mistyrose2','navajowhite1','orangered4','paleturquoise2','palegreen3','rosybrown2','royalblue3','salmon','seagreen','seashell1','sienna2','turquoise3','wheat2','black','gray10','gray30','gray50','gray70','gray90','white'), selected = 'royalblue3'),
+              choices = c('#FF0000','#00FF00','#0000FF','#FFFF00','#FF00FF','#00FFFF','antiquewhite','aquamarine3','azure1','brown3','brown4','burlywood4','cadetblue','coral3','cornsilk','cornsilk2','cyan3','darkcyan','darkolivegreen4','darkorange2','darkred','darkslategray','darkseagreen','darksalmon','darkslategray3','deeppink4','dodgerblue3','darkorchid2','dodgerblue4','firebrick3','floralwhite','honeydew3','hotpink4','khaki3','khaki4','lavenderblush3','lightblue3','lightcyan2','lightpink2','lightsalmon2','lightsteelblue3','lightyellow1','indianred3','indianred4','ivory','ivory3','midnightblue','mintcream','mistyrose2','navajowhite1','orangered4','paleturquoise2','palegreen3','rosybrown2','royalblue3','salmon','seagreen','seashell1','sienna2','turquoise3','wheat2','black','gray10','gray30','gray50','gray70','gray90','white'), selected = 'royalblue3'),
   
   sliderInput("Opacity", label = "Opacity:",
               min = 0, max = 1, value = .8, step = .1)
@@ -550,7 +606,7 @@ renderPlot({
   TQp <- TQp + geom_polygon(aes(fill=hex, group=hex), data=dhex[dhex==index,] , fill=generateColors(colorRGB0,input$seats)[index], colour='grey20', size=1, alpha=0.85) +
                geom_point(data=votes ,aes(x,y),color="grey20", size=4, alpha=.8)+
                geom_text(data=labelcoords,aes(label=label), color="grey15", hjust=0.5, vjust=0.5, size=6)+
-               geom_point(data=NodesData[index,],aes(x,y,z),color="khaki2")
+               geom_point(data=NodesData[index,],aes(x,y),color="khaki2")
   
   }
   
@@ -604,7 +660,7 @@ renderPlot({
   grid.arrange(grobs = plist[input$ChoosePlots], ncol=2)
     
   
-}, width=900, height=700, res=72)
+}, width=3600, height=2800, res=288)
 
 #renderPlot({
 

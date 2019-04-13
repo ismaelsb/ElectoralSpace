@@ -97,11 +97,11 @@ Now is when we wonder if the well known D'Hondt method somehow resembles our goa
 ![](ElectoralSpace_files/figure-html/unnamed-chunk-22-1.png)<!-- -->![](ElectoralSpace_files/figure-html/unnamed-chunk-22-2.png)<!-- -->
 
 ```
-## [1] 0.3691045
+## [1] 0.3677612
 ```
 
 ```
-## [1] 0.2855721
+## [1] 0.2846269
 ```
 
 The diagram for malaportionment shows the proportion of results not allocated to the nearest node.
@@ -116,11 +116,11 @@ Clearly, this method shows a bias towards extreme nodes. Again, we shouldn't bla
 ![](ElectoralSpace_files/figure-html/unnamed-chunk-24-1.png)<!-- -->![](ElectoralSpace_files/figure-html/unnamed-chunk-24-2.png)<!-- -->
 
 ```
-## [1] 0.08014925
+## [1] 0.07840796
 ```
 
 ```
-## [1] 0.08333333
+## [1] 0.08208955
 ```
 
 ![](ElectoralSpace_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
@@ -182,11 +182,11 @@ Hare quota is pretty close to Sainte-Laguë and Droop quota is so to D'Hondt, as
 ![](ElectoralSpace_files/figure-html/unnamed-chunk-36-1.png)<!-- -->
 
 ```
-## [1] 0.8931343
+## [1] 0.8908458
 ```
 
 ```
-## [1] 0.9232836
+## [1] 0.9215423
 ```
 
 Finally let's take a look at the numbers. Here is an example of allocation:
@@ -201,7 +201,7 @@ votes
 ```
 
 ```
-## [1]  77 265 117
+## [1] 194 968 206
 ```
 
 ```r
@@ -215,17 +215,17 @@ alloc(letters[1:3], votes, 9, c(1,2), .05) #print seats sum and allocation
 ## [[1]]$`divisor step 1 for 9 seats`
 ## 
 ## a b c 
-## 1 6 2 
+## 1 7 1 
 ## 
 ## [[1]]$`ordering for divisor step 1 for 9 seats`
 ##       [,1]
 ##  [1,] "b" 
 ##  [2,] "b" 
-##  [3,] "c" 
+##  [3,] "b" 
 ##  [4,] "b" 
-##  [5,] "a" 
-##  [6,] "b" 
-##  [7,] "c" 
+##  [5,] "c" 
+##  [6,] "a" 
+##  [7,] "b" 
 ##  [8,] "b" 
 ##  [9,] "b" 
 ## 
@@ -234,19 +234,19 @@ alloc(letters[1:3], votes, 9, c(1,2), .05) #print seats sum and allocation
 ## [[2]]$`divisor step 2 for 9 seats`
 ## 
 ## a b c 
-## 2 5 2 
+## 1 7 1 
 ## 
 ## [[2]]$`ordering for divisor step 2 for 9 seats`
 ##       [,1]
 ##  [1,] "b" 
-##  [2,] "c" 
-##  [3,] "b" 
+##  [2,] "b" 
+##  [3,] "c" 
 ##  [4,] "a" 
 ##  [5,] "b" 
-##  [6,] "c" 
+##  [6,] "b" 
 ##  [7,] "b" 
 ##  [8,] "b" 
-##  [9,] "a"
+##  [9,] "b"
 ```
 
 Sample of the data:
@@ -264,34 +264,34 @@ head(df[[1]][sample(1:dots,10,replace=F),]) #sample data for step=1 and seats=5
 ```
 
 ```
-##                x          y          z Sx Sy Sz Euclid Manhattan Uniform
-## 14193 0.45728643 0.43718593 0.10552764  3  2  0     14        14      14
-## 11800 0.35678392 0.42211055 0.22110553  2  2  1     14        14      14
-## 6773  0.18592965 0.19095477 0.62311558  1  1  3      8         8       8
-## 9930  0.28643216 0.62814070 0.08542714  1  4  0     15        15      15
-## 2176  0.05527638 0.15075377 0.79396985  0  0  5      2         2       2
-## 18466 0.71859296 0.09045226 0.19095477  4  0  1     19        19      19
+##               x          y          z Sx Sy Sz Euclid Manhattan Uniform
+## 10010 0.2914573 0.31155779 0.39698492  1  2  2      9         9       9
+## 11581 0.3467337 0.63316583 0.02010050  2  3  0     15        15      15
+## 16685 0.5879397 0.35175879 0.06030151  3  2  0     18        18      18
+## 4878  0.1306533 0.01005025 0.85929648  0  0  5      7         7       7
+## 8439  0.2361809 0.59798995 0.16582915  1  3  1     10        10      10
+## 11027 0.3266332 0.53266332 0.14070352  2  3  0     10        10      10
 ##       Orthodromic Malapportionment Malapportionment2 AllocOrderCode All2
-## 14193          14             TRUE              TRUE             30    5
-## 11800          14            FALSE             FALSE             46    5
-## 6773            8            FALSE             FALSE             53    1
-## 9930           15             TRUE              TRUE            112    3
-## 2176            2             TRUE              TRUE            242    1
-## 18466          19            FALSE             FALSE             54    6
+## 10010           9            FALSE             FALSE            140    2
+## 11581          15            FALSE             FALSE             37    5
+## 16685          18            FALSE             FALSE             84    5
+## 4878            7             TRUE              TRUE            242    1
+## 8439           10            FALSE             FALSE            193    3
+## 11027          15             TRUE             FALSE             37    5
 ##       All3 All4 Allocated   Entropy CameraEntropy  Parties CameraParties
-## 14193    9   12        18 0.9568365     0.6730117 2.430851      1.923077
-## 11800    6    8        14 1.0654494     1.0549202 2.821991      2.777778
-## 6773     1    2         8 0.9237212     0.9502705 2.177195      2.272727
-## 9930     7    9        11 0.8603512     0.5004024 2.066534      1.470588
-## 2176     1    1         1 0.6284667     0.0000000 1.523995      1.000000
-## 18466   10   13        19 0.7709845     0.5004024 1.782464      1.470588
+## 10010    6    7         9 1.0894133     1.0549202 2.944531      2.777778
+## 11581    7    9        15 0.7351639     0.6730117 1.917445      1.923077
+## 16685    9   14        18 0.8491445     0.6730117 2.113970      1.923077
+## 4878     1    1         1 0.4424442     0.0000000 1.323519      1.000000
+## 8439     7    9        10 0.9462828     0.9502705 2.268228      2.272727
+## 11027    7    9        15 0.9769157     0.6730117 2.437735      1.923077
 ##       Droop
-## 14193    18
-## 11800    14
-## 6773      8
-## 9930     11
-## 2176      2
-## 18466    19
+## 10010     9
+## 11581    15
+## 16685    18
+## 4878      1
+## 8439     10
+## 11027    15
 ```
 
 **Borders for highest averages methods**

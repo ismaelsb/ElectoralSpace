@@ -1,0 +1,544 @@
+---
+title: "SeatCalculator - Highest Averages Methods v3.0"
+author: ""
+date: ""
+output: 
+  html_notebook: 
+    fig_height: 9
+    fig_width: 9
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+Explanations and code available here: <http://ismaelsb.github.io/ElectoralSpace> 
+
+Fill in the boxes with the number of votes if you want to compute their allocated seats.
+
+Fill in only the first boxes up to the number of parties specified, the rest will be ignored and not computed.
+
+If not all, select a minimun of 3 parties to be shown from the specified before.
+
+Select the 'step' value for the Electoral Method: (i.e. 0.5-Imperiali, 1-D'Hondt, 2-Sainte-Lague, 3-Danish).
+
+```{r, echo = F, results='hide', message=FALSE, warning=FALSE}
+#Uncommmet to install ggtern from an online CRAN repository:
+#install.packages("ggtern")
+#Load the ggtern library:
+library(ggtern)
+#library(stats)
+#set.seed(156) #fix random generation
+
+```
+
+```{r, echo = F}
+
+generateNodes <- function(seats){ 
+  
+  #define nodes
+  nnodes = (seats+1)*(seats+2)/2;
+  nodes  = matrix(0,nnodes,3);
+  t=1;
+  for (i in 0:seats){
+    for (j in i:seats){
+      nodes[t,] = c(i,j-i,seats-j);
+      t=t+1;
+    }
+  }  
+  
+  index=as.matrix(1:nnodes)
+  
+  #node labels for seats
+  label=cbind(as.character(nodes[,1]),matrix("-",nnodes),as.character(nodes[,2]),matrix("-",nnodes),as.character(nodes[,3]))
+  label=do.call("paste0",as.data.frame(label))
+  
+  
+  nodes <- cbind(index,as.data.frame(nodes),label)
+  names(nodes) <- c("index",letters[24:26],"label")
+  return(nodes);
+  
+}
+
+```
+
+```{r, echo = F}
+
+generateColors <- function (colorRGB, seats) {
+  
+  nnodes = (seats+1)*(seats+2)/2;
+  nodes <- as.matrix(generateNodes(seats)[,c("x","y","z")])
+  #decimal codes for colors in nodes
+  
+  if (seats==0){values<-"#ffffff"} else {
+  Code3 = floor(nodes*255.9/seats) #255.9 avoids seats -> 256 -> HEX #100 case
+  #linear transformation to fixed extreme colors
+  CodeDecRGB = floor(Code3%*%matrix(colorRGB,3,3, byrow=T)/256)
+  #hex codes for colors in nodes
+  CodeRGB=cbind(matrix("#",nnodes),format(as.hexmode(CodeDecRGB[,1]),width=2),format(as.hexmode(CodeDecRGB[,2]),width=2),format(as.hexmode(CodeDecRGB[,3]),width=2))
+  CodeRGB=do.call("paste0",as.data.frame(CodeRGB))
+  values=CodeRGB
+  }
+  
+  return(values);
+  
+}
+
+```
+
+```{r, echo = F}
+
+alloc <- function(parties, votes, seats, step, threshold=0){
+  
+  #function for the seat allocation and its ordering
+  #computes allocation for several values of seats and divisor step methods
+  #with the same quotiens table
+
+
+  
+  votes=votes*(votes>=(threshold*sum(votes)))
+  
+  if (sum(votes>0)==0) {
+    
+       votes <- votes*0+1
+       #to avoid an error in the share of seats
+    
+  }
+  
+  Mst <- max(step)
+  Mse <- max(seats,1) #1 to avoid 0
+  nquotients=(1+Mst*(Mse-1))
+  
+  #table with all the quotients needed
+  quotienstable <- data.frame( 
+    parties    = rep(parties, each = nquotients), 
+    quotients  = as.vector(sapply(votes, function(x) 
+      x/seq(from=1, to=nquotients) )),
+    votesrep   = rep(votes, each = nquotients), 
+    #in a tie of quotiens, the party with more votes first
+    tiebreak = rep(runif(length(parties)), each = nquotients) #
+    #in a tie of votes, first seats allocated at random quotientsthen the nexts seats in the same order
+  ) 
+  
+  SeatsList=list()
+  filteredtable =list()
+  
+  
+  for (j in 1:length(step)) {
+    
+    
+    #select from the table of all quotiens the ones whose divisors
+    #belong to the current sequence, given 'seats' and 'step'
+    select <- rep(seq(from=1, to=1+step[j]*(Mse-1), by=step[j]),length(parties))+
+      rep(seq(from=0,to=nquotients*length(parties)-1,by=nquotients),each=Mse)
+    
+    filteredtable [[j]] <- quotienstable$parties[select][order(-quotienstable$quotients[select], -quotienstable$votesrep[select],quotienstable$tiebreak[select])] #,runif(length(parties))
+    
+    SeatsList[[j]]<-list()
+    
+    #a vector of values for seats if you want to compute the partial sums
+    for (i in 1:length(seats)){
+      
+      SeatsList[[j]][[i]]= table(filteredtable[[j]][1:seats[i]])
+      
+      if (seats[i]==0){
+    
+        SeatsList[[j]][[i]]=0*SeatsList[[j]][[i]]
+        
+    
+      }
+
+      
+    }
+    
+    names(SeatsList[[j]])[1:length(seats)]<-do.call("paste0",as.data.frame(cbind("divisor step ",step[j]," for ", seats," seats")))
+    
+    
+    SeatsList[[j]][[length(seats)+1]] = as.matrix(filteredtable[[j]][1:Mse]) #ordering
+    
+    names(SeatsList[[j]])[length(seats)+1]<-paste0("ordering for divisor step ", step[j]," for ", Mse," seats")
+    
+    
+  }
+  
+  
+  return(SeatsList);
+  
+}
+
+```
+
+```{r, echo = F}
+
+AllocatedNode <- function (y, nodes, nnodes) {
+  
+  Node = which.min(apply(abs(nodes - rep(1,nnodes) %*% t(y)),1,max))
+  
+  return(Node);
+  
+}
+
+```
+
+```{r, echo = F}
+
+generateHexagonData <- function(seats, step=1) {
+  
+  divisor <- seq(from=1, to=1+step*(seats+2-1), by=step)
+  divisor <- c(0,divisor)
+  
+  NodesData <- generateNodes(seats)
+  
+  hexagon <- matrix(0,nrow=(seats+1)*(seats+2)/2, ncol=6*3)
+  
+  for (i in 1:((seats+1)*(seats+2)/2)){
+    
+    n <- NodesData[i,2:4] #node
+    hexagon[i,] <- rep(c(n[[1]],n[[2]],n[[3]]),6)+c(1,0,0, 1,0,1, 0,0,1, 0,1,1, 0,1,0, 1,1,0)
+    hexagon[i,] <- divisor[hexagon[i,]+1]
+    
+  }
+  
+  dhex <- as.data.frame(cbind(rep(1:((seats+1)*(seats+2)/2),each=6), matrix(t(hexagon),nrow=6*(seats+1)*(seats+2)/2, ncol=3, byrow=T),
+                              rep(NodesData$x,each=6),rep(NodesData$y,each=6),rep(NodesData$z,each=6)))
+  
+  names(dhex) <- c('hex','x','y','z','nx','ny','nz')
+  
+  return(dhex)
+  
+}
+
+```
+
+```{r, echo = F}
+
+generatelabels <- function(seats, step=1){
+  
+  #labels for the center of the regions
+  
+  nnodes     <- (seats+1)*(seats+2)/2
+  nodes      <- generateNodes(seats)
+  dhex       <- generateHexagonData(seats, step=step)
+  labelsData <- as.data.frame(matrix(0,nnodes, 5))
+  
+  for (index in 1:nnodes) {
+    
+    labelsData[index,1]   <- as.integer(index)
+    labelsData[index,2:4] <- as.numeric(t(colSums(dhex[dhex$hex==index,2:4])))
+    labelsData[index,5]   <- toString(nodes[index,5])
+    
+  }
+  
+  names(labelsData) <- c("index","x","y","z","label")
+  
+  return(labelsData)
+  
+}
+
+```
+
+```{r, echo = F}
+
+plotallocation <- function (seats, step=1, colorRGB0=c(242,74,87, 124,218,198, 2,114,195), alpha=0.75, labelsize=4, dotsize=1, dotcolor='khaki2') {
+  
+  NodesData <- generateNodes(seats)
+  dhex <- generateHexagonData(seats, step)
+  labelsData <- generatelabels(seats, step)
+  
+  polygons <- ggtern(data=dhex, aes(x, y, z)) + theme_nomask()
+  
+  for (i in 1:((seats+1)*(seats+2)/2)){
+    
+    polygons <- polygons + geom_polygon(aes(fill=hex, group=hex), data=dhex[dhex==i,] , fill=generateColors(colorRGB0,seats)[i], colour='grey40', size=0, alpha=alpha) #no lines
+    
+  }
+  
+  polygons <- polygons + geom_point(data=NodesData,aes(x,y),color=dotcolor, size=dotsize)+
+    #geom_text(data=NodesData, aes(label=label), color="grey30", hjust=0.5, vjust=-0.6, size=4)+ 
+    labs(x="X",y="Y",z="Z",title="")
+  
+  polygons <- polygons + #geom_point(data=labelsData,aes(x,y,z),color="khaki2")+
+    geom_text(data=labelsData, aes(label=label), color="grey30", hjust=0.5, vjust=0.5, size=labelsize)+ 
+    labs(x="X",y="Y",z="Z",title="")
+  
+  return(polygons)
+  
+}
+
+```
+
+```{r, echo = F}
+
+plotSeatCalculator<-function(seats,step,votes1,votes2,votes3,color1,color2,color3,Opacity=1,labelsize=4,dotsize=2,dotcolor='khaki2',threshold=0){
+  
+  
+  
+  colorRGB0 <- matrix(rbind(col2rgb(color1),
+                            col2rgb(color2),
+                            col2rgb(color3)),1,9)
+  
+  
+  TQp <- plotallocation(seats, step=step, colorRGB0=colorRGB0, alpha=Opacity, labelsize=labelsize, dotsize=dotsize, dotcolor=dotcolor)
+  
+  
+  NodesData <- generateNodes(seats)
+  
+  
+  votes <- as.data.frame(cbind(0,0,0))
+  votesinput <- as.data.frame(cbind(votes1,votes2,votes3))
+  names(votes) <- c("x","y","z")
+  names(votesinput) <- c("x","y","z")
+  
+  
+  
+  if (max(votesinput)>0 & is.na(min(votesinput))==F) {
+    
+    if (seats==0) {
+    
+      votes <- votesinput
+    
+      TQp <- TQp + geom_point(data=votes ,aes(x,y),color="grey20", size=dotsize+2, alpha=.8)
+    
+    } else {
+    
+    votes <- votesinput
+    
+    allocated <- alloc(letters[24:26], unlist(votes), seats, step, threshold)
+    
+    nodes  <- as.matrix(NodesData[,c("x","y","z")])
+    nnodes <- (seats+1)*(seats+2)/2
+    
+    index <- AllocatedNode(allocated[[1]][[1]], nodes, nnodes)
+    
+    dhex <- generateHexagonData(seats, step=step)
+    
+    labelcoords <- as.data.frame(t(colSums(dhex[dhex$hex==index,2:4])))
+    labelcoords <- cbind(labelcoords,NodesData[index,]$label)
+    names(labelcoords)[4] <- "label"
+    
+    
+    TQp <- TQp + geom_polygon(aes(fill=hex, group=hex), data=dhex[dhex==index,] , fill=generateColors(colorRGB0,seats)[index], colour='grey20', size=1, alpha=0.85) +
+      geom_point(data=votes ,aes(x,y),color="grey20", size=dotsize+2, alpha=.8)+
+      geom_text(data=labelcoords,aes(label=label), color="grey15", hjust=0.5, vjust=0.5, size=labelsize+2)+
+      geom_point(data=NodesData[index,],aes(x,y),color=dotcolor,size=dotsize)
+    } 
+  
+  }
+  
+  
+  
+  return(TQp)
+
+  
+}
+
+```
+
+```{r echo=FALSE, warning=FALSE}
+inputPanel(
+  
+  #radioButtons("step", label = "Number of steps:", 1:3, selected=1, inline=T),
+  
+  #radioButtons("electmethod", label = "Electoral method:", c("D'Hondt","Sainte-Lague", "Danish"), selected="D'Hondt", inline=F),
+  
+  numericInput("seats", label="Number of seats:", value=4, min = 0, step=1, width='75%'),
+  
+  numericInput("st", label="Step value:", min = 0.25, max = 5, value = 1, step = 0.25, width='75%'),
+  
+  #sliderInput("st", label = "Step value:", min = 0.25, max = 5, value = 1, step = 0.25),
+    
+  #sliderInput("seats", label = "Number of seats:",
+  #            min = 1, max = 131, value = 4, step = 1),
+  
+  sliderInput("n", label = "Number of parties:", min = 3, max = 8, value = 3, step = 1, width='75%')
+  
+  #sliderInput("threshold", label = "Threshold:",
+  #            min = 0, max = .30, value = 0, step = .01)
+  
+  #actionButton("button", "Compute!")
+  
+  #checkboxGroupInput("selectparties", label="Show parties:", choiceNames = LETTERS[1:8], choiceValues = 1:8 , selected = 1:8, inline = T)
+  
+  
+)
+
+inputPanel(
+  
+  numericInput("votes1", label="Votes for Party A", value=0, min = 0),
+  numericInput("votes2", label="Votes for Party B", value=0, min = 0),
+  numericInput("votes3", label="Votes for Party C", value=0, min = 0),
+  numericInput("votes4", label="Votes for Party D", value=0, min = 0),
+  numericInput("votes5", label="Votes for Party E", value=0, min = 0),
+  numericInput("votes6", label="Votes for Party F", value=0, min = 0),
+  numericInput("votes7", label="Votes for Party G", value=0, min = 0),
+  numericInput("votes8", label="Votes for Party H", value=0, min = 0)
+  
+)
+
+
+
+
+renderPlot({
+
+  
+  #observeEvent(input$button, {
+  #eventReactive(input$button,{  
+    
+  step <- input$st
+  
+  #if (input$electmethod == "D'Hondt"){
+    
+  #  step <- 1
+    
+  #} else if (input$electmethod == "Sainte-Lague"){
+    
+  #  step <- 2
+    
+  #} else if (input$electmethod == "Danish"){
+    
+  #  step <- 3
+    
+  #}
+  
+  
+  votesvector0 <- as.vector(c(input$votes1,input$votes2,input$votes3,input$votes4,input$votes5,input$votes6,input$votes7,input$votes8))
+  
+  #votesvector <- votesvector0[votesvector0>0]
+  
+  #n <- sum(votesvector>0)
+  
+  
+  
+  n <- input$n
+  votesvector <- votesvector0[1:n]
+  
+  colorinput0 <- c(input$color1,input$color2,input$color3,input$color4,input$color5,input$color6,input$color7,input$color8)
+  colorinput <- colorinput0[1:n]
+  
+  
+  partiessubsets <- t(combn(n,3))
+  ncombparties <- dim(partiessubsets)[1]
+  alphabet <- LETTERS[1:n]
+  
+  
+
+  allocTotal <- alloc(alphabet, votesvector, input$seats, step, threshold=0) 
+
+
+  #select parties
+  #selectparties <- (1:n)[input$selectparties[input$selectparties<=n]] #selected from the first n
+  #allocSelect <- allocTotal[[1]][[1]][selectparties]
+  #seatsSelect <- sum(allocSelect)
+  
+  #s <- length(selectparties)
+  
+  
+  
+  if (n>=3) {
+  
+  partiessubsets <- t(combn(n,3))
+  ncombparties <- dim(partiessubsets)[1]
+  #
+  
+  
+     
+  TQp <- list()
+  
+  for (i in 1:ncombparties){
+    
+    allocSubset <- allocTotal[[1]][[1]][partiessubsets[i,]]
+    seatsSubset <- sum(allocSubset)
+    
+  
+    TQp[[i]] <- plotSeatCalculator(seatsSubset,step,votesvector[partiessubsets[i,1]],votesvector[partiessubsets[i,2]],votesvector[partiessubsets[i,3]],colorinput[partiessubsets[i,1]],colorinput[partiessubsets[i,2]],colorinput[partiessubsets[i,3]],input$Opacity,input$labelsize,input$dotsize,input$dotcolor,threshold=0)+
+      xlab(alphabet[partiessubsets[i,1]])+
+      ylab(alphabet[partiessubsets[i,2]])+
+      zlab(alphabet[partiessubsets[i,3]])
+    
+    
+    
+  }
+
+    #c <-round(sqrt(n*(n-1)*(n-2)/12)) #num of columns: x*2x rectangle ~ (n comb 3) number of plots
+    #c <- 2
+
+    plist=TQp
+    multiTQp <- grid.arrange(grobs = plist)#, ncol=c)
+    multiTQp 
+    
+  }#end  if s >=3 
+    
+  #})
+    
+  #}, autoDestroy=T)
+  
+  
+  
+    
+  
+    
+
+    
+  }, width=2800, height=2800, res=180)#, width=2800, height=5600, res=180)#, width=3600, height=2800, res=288
+  
+
+
+inputPanel(
+  
+  sliderInput("Opacity", label = "Opacity:",
+              min = 0, max = 1, value = .7, step = .1),
+  
+  sliderInput("labelsize", label = "Label size:",
+              min = 0, max = 12, value = 4, step = 1),
+  
+  sliderInput("dotsize", label = "Dot size:",
+              min = 0, max = 5, value = 2, step = 1),
+  
+  selectInput("dotcolor", label = "Dot color:",
+              choices = c('red','green','blue','yellow','magenta','cyan','purple','brown','orange','antiquewhite','aquamarine3','azure1','brown3','brown4','burlywood4','cadetblue','coral3','cornsilk','cornsilk2','cyan3','darkcyan','darkolivegreen4','darkorange2','darkred','darkslategray','darkseagreen','darksalmon','darkslategray3','deeppink4','dodgerblue3','darkorchid2','dodgerblue4','firebrick3','floralwhite','honeydew3','hotpink4','khaki2','khaki3','khaki4','lavenderblush3','lightblue3','lightcyan2','lightpink2','lightsalmon2','lightsteelblue3','lightyellow1','indianred3','indianred4','ivory','ivory3','midnightblue','mintcream','mistyrose2','navajowhite1','orangered4','paleturquoise2','palegreen3','rosybrown2','royalblue3','salmon','seagreen','seashell1','sienna2','turquoise3','wheat2','black','gray10','gray30','gray50','gray70','gray90','gray','white'), selected = 'khaki2')
+  
+)
+
+
+inputPanel(
+  
+  selectInput("color1", label = "Color A:",
+              choices = c('red','green','blue','yellow','magenta','cyan','purple','brown','orange','antiquewhite','aquamarine3','azure1','brown3','brown4','burlywood4','cadetblue','coral3','cornsilk','cornsilk2','cyan3','darkcyan','darkolivegreen4','darkorange2','darkred','darkslategray','darkseagreen','darksalmon','darkslategray3','deeppink4','dodgerblue3','darkorchid2','dodgerblue4','firebrick3','floralwhite','honeydew3','hotpink4','khaki3','khaki4','lavenderblush3','lightblue3','lightcyan2','lightpink2','lightsalmon2','lightsteelblue3','lightyellow1','indianred3','indianred4','ivory','ivory3','midnightblue','mintcream','mistyrose2','navajowhite1','orangered4','paleturquoise2','palegreen3','rosybrown2','royalblue3','salmon','seagreen','seashell1','sienna2','turquoise3','wheat2','black','gray10','gray30','gray50','gray70','gray90','gray','white'), selected = 'yellow'),
+  
+  selectInput("color2", label = "Color B:",
+              choices = c('red','green','blue','yellow','magenta','cyan','purple','brown','orange','antiquewhite','aquamarine3','azure1','brown3','brown4','burlywood4','cadetblue','coral3','cornsilk','cornsilk2','cyan3','darkcyan','darkolivegreen4','darkorange2','darkred','darkslategray','darkseagreen','darksalmon','darkslategray3','deeppink4','dodgerblue3','darkorchid2','dodgerblue4','firebrick3','floralwhite','honeydew3','hotpink4','khaki3','khaki4','lavenderblush3','lightblue3','lightcyan2','lightpink2','lightsalmon2','lightsteelblue3','lightyellow1','indianred3','indianred4','ivory','ivory3','midnightblue','mintcream','mistyrose2','navajowhite1','orangered4','paleturquoise2','palegreen3','rosybrown2','royalblue3','salmon','seagreen','seashell1','sienna2','turquoise3','wheat2','black','gray10','gray30','gray50','gray70','gray90','gray','white'), selected = 'magenta'),
+  
+  selectInput("color3", label = "Color C:",
+              choices = c('red','green','blue','yellow','magenta','cyan','purple','brown','orange','antiquewhite','aquamarine3','azure1','brown3','brown4','burlywood4','cadetblue','coral3','cornsilk','cornsilk2','cyan3','darkcyan','darkolivegreen4','darkorange2','darkred','darkslategray','darkseagreen','darksalmon','darkslategray3','deeppink4','dodgerblue3','darkorchid2','dodgerblue4','firebrick3','floralwhite','honeydew3','hotpink4','khaki3','khaki4','lavenderblush3','lightblue3','lightcyan2','lightpink2','lightsalmon2','lightsteelblue3','lightyellow1','indianred3','indianred4','ivory','ivory3','midnightblue','mintcream','mistyrose2','navajowhite1','orangered4','paleturquoise2','palegreen3','rosybrown2','royalblue3','salmon','seagreen','seashell1','sienna2','turquoise3','wheat2','black','gray10','gray30','gray50','gray70','gray90','gray','white'), selected = 'cyan'),
+  
+  selectInput("color4", label = "Color D:",
+              choices = c('red','green','blue','yellow','magenta','cyan','purple','brown','orange','antiquewhite','aquamarine3','azure1','brown3','brown4','burlywood4','cadetblue','coral3','cornsilk','cornsilk2','cyan3','darkcyan','darkolivegreen4','darkorange2','darkred','darkslategray','darkseagreen','darksalmon','darkslategray3','deeppink4','dodgerblue3','darkorchid2','dodgerblue4','firebrick3','floralwhite','honeydew3','hotpink4','khaki3','khaki4','lavenderblush3','lightblue3','lightcyan2','lightpink2','lightsalmon2','lightsteelblue3','lightyellow1','indianred3','indianred4','ivory','ivory3','midnightblue','mintcream','mistyrose2','navajowhite1','orangered4','paleturquoise2','palegreen3','rosybrown2','royalblue3','salmon','seagreen','seashell1','sienna2','turquoise3','wheat2','black','gray10','gray30','gray50','gray70','gray90','gray','white'), selected = 'red'),
+    
+  selectInput("color5", label = "Color E:",
+              choices = c('red','green','blue','yellow','magenta','cyan','purple','brown','orange','antiquewhite','aquamarine3','azure1','brown3','brown4','burlywood4','cadetblue','coral3','cornsilk','cornsilk2','cyan3','darkcyan','darkolivegreen4','darkorange2','darkred','darkslategray','darkseagreen','darksalmon','darkslategray3','deeppink4','dodgerblue3','darkorchid2','dodgerblue4','firebrick3','floralwhite','honeydew3','hotpink4','khaki3','khaki4','lavenderblush3','lightblue3','lightcyan2','lightpink2','lightsalmon2','lightsteelblue3','lightyellow1','indianred3','indianred4','ivory','ivory3','midnightblue','mintcream','mistyrose2','navajowhite1','orangered4','paleturquoise2','palegreen3','rosybrown2','royalblue3','salmon','seagreen','seashell1','sienna2','turquoise3','wheat2','black','gray10','gray30','gray50','gray70','gray90','gray','white'), selected = 'green'),
+    
+  selectInput("color6", label = "Color F:",
+              choices = c('red','green','blue','yellow','magenta','cyan','purple','brown','orange','antiquewhite','aquamarine3','azure1','brown3','brown4','burlywood4','cadetblue','coral3','cornsilk','cornsilk2','cyan3','darkcyan','darkolivegreen4','darkorange2','darkred','darkslategray','darkseagreen','darksalmon','darkslategray3','deeppink4','dodgerblue3','darkorchid2','dodgerblue4','firebrick3','floralwhite','honeydew3','hotpink4','khaki3','khaki4','lavenderblush3','lightblue3','lightcyan2','lightpink2','lightsalmon2','lightsteelblue3','lightyellow1','indianred3','indianred4','ivory','ivory3','midnightblue','mintcream','mistyrose2','navajowhite1','orangered4','paleturquoise2','palegreen3','rosybrown2','royalblue3','salmon','seagreen','seashell1','sienna2','turquoise3','wheat2','black','gray10','gray30','gray50','gray70','gray90','gray','white'), selected = 'blue'),
+
+    selectInput("color7", label = "Color G:",
+              choices = c('red','green','blue','yellow','magenta','cyan','purple','brown','orange','antiquewhite','aquamarine3','azure1','brown3','brown4','burlywood4','cadetblue','coral3','cornsilk','cornsilk2','cyan3','darkcyan','darkolivegreen4','darkorange2','darkred','darkslategray','darkseagreen','darksalmon','darkslategray3','deeppink4','dodgerblue3','darkorchid2','dodgerblue4','firebrick3','floralwhite','honeydew3','hotpink4','khaki3','khaki4','lavenderblush3','lightblue3','lightcyan2','lightpink2','lightsalmon2','lightsteelblue3','lightyellow1','indianred3','indianred4','ivory','ivory3','midnightblue','mintcream','mistyrose2','navajowhite1','orangered4','paleturquoise2','palegreen3','rosybrown2','royalblue3','salmon','seagreen','seashell1','sienna2','turquoise3','wheat2','black','gray10','gray30','gray50','gray70','gray90','gray','white'), selected = 'white'),
+
+    selectInput("color8", label = "Color H:",
+              choices = c('red','green','blue','yellow','magenta','cyan','purple','brown','orange','antiquewhite','aquamarine3','azure1','brown3','brown4','burlywood4','cadetblue','coral3','cornsilk','cornsilk2','cyan3','darkcyan','darkolivegreen4','darkorange2','darkred','darkslategray','darkseagreen','darksalmon','darkslategray3','deeppink4','dodgerblue3','darkorchid2','dodgerblue4','firebrick3','floralwhite','honeydew3','hotpink4','khaki3','khaki4','lavenderblush3','lightblue3','lightcyan2','lightpink2','lightsalmon2','lightsteelblue3','lightyellow1','indianred3','indianred4','ivory','ivory3','midnightblue','mintcream','mistyrose2','navajowhite1','orangered4','paleturquoise2','palegreen3','rosybrown2','royalblue3','salmon','seagreen','seashell1','sienna2','turquoise3','wheat2','black','gray10','gray30','gray50','gray70','gray90','gray','white'), selected = 'gray')
+    
+)
+
+
+
+
+
+
+
+ 
+
+
+
+

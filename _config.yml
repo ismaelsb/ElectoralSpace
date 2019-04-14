@@ -1,0 +1,8 @@
+title: A Tomography of Electoral Methods
+description: Electoral Space. Geometric visualization for proportional electoral methods
+google_analytics: 
+show_downloads: true
+theme: jekyll-theme-cayman
+
+gems:
+  - jekyll-mentions

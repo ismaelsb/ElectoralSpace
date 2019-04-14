@@ -272,7 +272,7 @@ plotallocation <- function (seats, step=1, colorRGB0=c(242,74,87, 124,218,198, 2
 
 ```{r, echo = F}
 
-plotSeatCalculator<-function(seats,step,votes1,votes2,votes3,color1,color2,color3,Opacity=1,labelsize=4,dotsize=2,dotcolor='khaki2',threshold=0){
+plotSeatCalculator<-function(seats,step,votes1,votes2,votes3,color1,color2,color3,Opacity=1,labelsize=4,dotsize=2,dotcolor='khaki2',threshold=0, forcealloc=F, forceallocSeats=NULL){
   
   
   
@@ -307,6 +307,8 @@ plotSeatCalculator<-function(seats,step,votes1,votes2,votes3,color1,color2,color
     votes <- votesinput
     
     allocated <- alloc(letters[24:26], unlist(votes), seats, step, threshold)
+    
+    if (forcealloc==T) { allocated[[1]][[1]] <- forceallocSeats }
     
     nodes  <- as.matrix(NodesData[,c("x","y","z")])
     nnodes <- (seats+1)*(seats+2)/2
@@ -452,8 +454,8 @@ renderPlot({
     allocSubset <- allocTotal[[1]][[1]][partiessubsets[i,]]
     seatsSubset <- sum(allocSubset)
     
-  
-    TQp[[i]] <- plotSeatCalculator(seatsSubset,step,votesvector[partiessubsets[i,1]],votesvector[partiessubsets[i,2]],votesvector[partiessubsets[i,3]],colorinput[partiessubsets[i,1]],colorinput[partiessubsets[i,2]],colorinput[partiessubsets[i,3]],input$Opacity,input$labelsize,input$dotsize,input$dotcolor,threshold=0)+
+  #to avoid in a recalculation of seats for every subset a possible incoherence due to random tie breaks when several parties have the exact same results, the function plotSeatCalculator will be called with a forced vector of seats in its arguments
+    TQp[[i]] <- plotSeatCalculator(seatsSubset,step,votesvector[partiessubsets[i,1]],votesvector[partiessubsets[i,2]],votesvector[partiessubsets[i,3]],colorinput[partiessubsets[i,1]],colorinput[partiessubsets[i,2]],colorinput[partiessubsets[i,3]],input$Opacity,input$labelsize,input$dotsize,input$dotcolor,threshold=0, forcealloc=T, forceallocSeats=allocSubset)+
       xlab(alphabet[partiessubsets[i,1]])+
       ylab(alphabet[partiessubsets[i,2]])+
       zlab(alphabet[partiessubsets[i,3]])
